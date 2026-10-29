@@ -25,7 +25,7 @@ The earlier predicted work planner, family kit, concern mapper, policy explainer
 
 ## Official directions
 
-[Slide 13](https://claude.echofold.ai/#/13) offers workload/break tracking, an understanding check before accepting major changes, a shutdown command, tracking the destination of saved time, recovery between hard helpline calls, and weekly group AI learning. `docs/brief.md` records each audience and intended behavior. Original ideas must explain their fit. The common purpose is returning time to people. No product is selected; the shutdown command remains a recommendation.
+[Slide 13](https://claude.echofold.ai/#/13) offers workload/break tracking, an understanding check before accepting major changes, a shutdown command, tracking the destination of saved time, recovery between hard helpline calls, and weekly group AI learning. `docs/brief.md` records each audience and intended behavior. Original ideas must explain their fit. The common purpose is returning time to people. The selected original concept is The Unfinished Work Vault; see `docs/vault-plan.md`.
 
 ## Schedule and support
 
@@ -86,6 +86,6 @@ The judge reads README and code or live site, plus the form description. Highest
 
 ## Open decisions
 
-Product, user, stack, integrations, and scope are undecided. Rules on prebuilt code and tools beyond Claude Code remain unconfirmed. No separate demo duration is specified. User must decide on public repo access versus live-site submission before publishing/submitting.
+The Unfinished Work Vault is selected; detailed implementation choices and supported platforms remain open. Rules on prebuilt code and tools beyond Claude Code remain unconfirmed. No separate demo duration is specified. User must decide on public repo access versus live-site submission before publishing/submitting.
 
 ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments. No application or shutdown integration has been built as part of that installation.
