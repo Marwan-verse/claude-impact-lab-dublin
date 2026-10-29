@@ -1,0 +1,23 @@
+# Person 1: frontend and demonstration
+
+The interface supports the planned local Git project capture, handover, snapshot verification, and restore workflow. Person 2 owns the local backend, filesystem operations, Git inspection, and Claude integration; this branch does not imply those services are already implemented.
+
+## Walkthrough once the backend is integrated
+
+1. Start the local backend and frontend using their documented commands.
+2. Open a real Git project containing unfinished changes. Choose **Put work away** and enter its local path.
+3. Inspect the project. Review the returned Git state, exclusions, and context to be sent to Claude. Enter the goal, issue, and next step.
+4. Create the vault and inspect the actual handover. Explain which information is user-provided, checked, and generated.
+5. Open the saved experiment, check snapshot integrity, and restore into a new, empty destination.
+6. Compare restored files against the original. Explain that verified snapshot integrity is not proof that dependencies, secrets, cloud services, or the application itself have been restored.
+
+## Demo fallback
+
+If the backend or Claude service is unavailable, show the actual unavailable state and explain that capture and restore require Person 2's service. Do not present canned responses as a working product or claim a capture succeeded.
+
+## Checks before handoff
+
+- Review keyboard focus, form labels, error messages, small-screen layouts, and reduced-motion behavior.
+- Check that the user sees the context supplied to Claude before submission and can distinguish checked state from AI output.
+- Verify all visible actions against the agreed backend contract and actual integration.
+- Ensure the README describes current setup, dependencies, limitations, and user-facing behavior without promising unimplemented functions.
