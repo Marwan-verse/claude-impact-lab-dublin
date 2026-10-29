@@ -4,8 +4,10 @@ Person 2 owns the local service. The frontend currently proxies `/api` to `http:
 
 | Method and path | Request | Expected response |
 | --- | --- | --- |
-| `POST /api/inspect` | `{ path }` | Inspection JSON displayed to the user, including evidence and exclusions. |
-| `POST /api/vaults` | `{ path, goal, issue, nextStep }` | `{ id, name, createdAt, handover, nextStep }` or `{ vault: {...} }`. |
+| `POST /api/inspect` | `{ path }` | Inspection JSON with `inspectionId`, evidence and exclusions. |
+| `POST /api/handover/preview` | `{ inspectionId, goal, issue, nextStep }` | `{ previewId, provider, context }`, with `context` the exact serialized material to be sent. No model call. |
+| `POST /api/handover/generate` | `{ previewId }` | `{ handover }` or `{ draft }`, a generated string. Only send the reviewed preview. |
+| `POST /api/vaults` | `{ inspectionId, handover }` | `{ id, name, createdAt, handover, nextStep }` or `{ vault: {...} }`. |
 | `GET /api/vaults` | — | Array of vaults or `{ vaults: [...] }`. |
 | `GET /api/vaults/:id` | — | A vault object or `{ vault: {...} }`. |
 | `POST /api/vaults/:id/verify` | — | JSON verification results. |
@@ -17,8 +19,7 @@ The backend must inspect and restore real files safely, reject existing destinat
 
 ## Integration gaps to resolve with Person 2
 
-- Define structured inspection data for checked Git facts, included/excluded files, user notes, and the exact selected context that would be sent to Claude. The current JSON display cannot guarantee that the preview matches the payload.
-- Add an explicit review/consent step tied to that exact Claude-bound payload before the backend sends it; a generic configuration reminder is not a substitute.
+- Agree structured inspection data for checked Git facts, included/excluded files, user notes, and exact context. The frontend displays the service's preview and requires confirmation, but a real backend must enforce that the generated request matches the reviewed payload.
 - Define whether capture happens before or after handover review, and how a user can edit and persist the handover. Current edits are temporary and navigating away discards them.
 - Define verification and restore result schemas, including explicit success/failure, details, and what remains unverified. The UI reports explicit `ok`, `success`, or `verified` false values as problems; other structures still need joint agreement.
 - Bind the local service to loopback, validate browser origins, protect local paths and symlinks, and never overwrite existing restore destinations. These are backend requirements, not verified properties of this frontend.
@@ -26,7 +27,7 @@ The backend must inspect and restore real files safely, reject existing destinat
 
 ## Proposed next contract: preview, generate, review, save
 
-This is an integration proposal, not an implemented API. Agree the schema with Person 2 before changing either side. It separates inspection and outbound AI use so the frontend can show precisely what the service intends to send.
+This is an integration proposal, not an implemented backend API. The frontend now uses these proposed preview, generate, and save steps; agree and verify the schema with Person 2. It separates inspection and outbound AI use so the frontend can show precisely what the service intends to send.
 
 1. `POST /api/inspect` with `{ path }` returns an inspection ID, checked facts (branch, commit, changed files, setup evidence), included paths, exclusions, and warnings. Keep factual evidence distinct from user notes.
 2. `POST /api/handover/preview` with `{ inspectionId, goal, issue, nextStep }` returns `{ previewId, provider, context }`, where `context` is the exact serialised material the service will send. It performs no model call. It must exclude credentials and source contents by default. The frontend presents that material for review.
