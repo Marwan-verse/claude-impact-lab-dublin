@@ -67,7 +67,7 @@ The judge reads README and code or live site, plus the form description. Highest
 
 - One repo or accessible live-site link per team; closes 20:30 with no reopening promised.
 - Repository submissions must be public for judging and may be made private again afterward.
-- This repo remains private per user instruction. Reading the deck does not authorise a visibility change. Obtain explicit authorisation or use a working accessible live site.
+- The repository was made public by the user on 29 October 2026 for judging.
 - Form fields: team name, project name, link, and short description of what it does and whom it gives time back to.
 - Up to five team members' names and Claude-account emails; prize delivery uses those accounts. Keep personal details out of tracked files.
 - Push final changes and verify access before submitting; verify submission acknowledgement afterward.

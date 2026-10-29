@@ -163,4 +163,4 @@ Closing: “The Vault gives you a reliable way back.” Compare time to regain c
 | Useful afterward, 20% | Local setup, real interface, clear exclusions and limitations, self-contained README. |
 | Gives time back, 20% | Reduces end-of-day handover and next-session context recovery without recurring alerts. |
 
-The organiser's Claude-based judging agent reads the README and code or accessible live site plus submission description. Keep claims consistent with implemented evidence. The repository remains private until the user explicitly authorises changing visibility; a publicly accessible live site is another submission route.
+The organiser's Claude-based judging agent reads the README and code or accessible live site plus submission description. Keep claims consistent with implemented evidence. The repository was made public by the user on 29 October 2026 for judging.

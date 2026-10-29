@@ -120,7 +120,7 @@ Before creating a vault, **review the inspection's capture and provider-context 
 
 ## Event context and submission notes
 
-Private preparation repository for Kevin Collins's Claude Code Impact Lab, hosted with DCU on **29 October 2026**.
+Event notes for Kevin Collins's Claude Code Impact Lab, hosted with DCU on **29 October 2026**.
 
 ### Confirmed challenge: compression burnout
 
@@ -149,7 +149,7 @@ AI speeds up tasks, but people take on more work and lose breaks and evenings. B
 
 ### Submission and access
 
-One GitHub repo or accessible live-site link per team. Repo submissions must be public for the judging agent. **This repo remains private at the user's request**; changing visibility needs their instruction. A working accessible live site is an alternative. The form asks for team/project names, link, description, and each member's name and Claude-account email. Keep personal submission data out of tracked files.
+One GitHub repo or accessible live-site link per team. Repo submissions must be public for the judging agent. The repository was made public by the user on 29 October 2026 for judging. A working accessible live site is an alternative. The form asks for team/project names, link, description, and each member's name and Claude-account email. Keep personal submission data out of tracked files.
 
 ### Before building
 
