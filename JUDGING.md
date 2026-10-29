@@ -50,6 +50,7 @@ Without a key, the test suite still exercises inspection, capture, hashing, veri
 **Live run, 29 October 2026,** with a real TensorX key and model `deepseek/deepseek-v4.1-flash`, on a project from `scripts/make-demo-project.sh`, using the same endpoint sequence as the UI:
 
 ```text
+# Condensed from two live runs of the same flow; output abbreviated.
 capture: files [README.md, src/api.js, src/chart.js]   skipped [.env, .git]
 provider: TensorX
 handover (excerpt):
@@ -62,7 +63,7 @@ handover (excerpt):
   - Inference/untested: the 429 behavior ... src/api.js contents were not provided.
 verify:  {"ok":true,"issues":[],"checkedFiles":3}
 restore: {"restoredFiles":3}; diff against original: identical; .env not restored
-original project: unchanged (git status identical before and after)
+original project: unchanged (git status checked after restore; also covered by tests)
 ```
 
 ### Someone would use it (20%)
