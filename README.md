@@ -46,9 +46,9 @@ Project statuses, journal entries, context links and recovery checkmarks are sto
 
 ## How it gives time back
 
-- **Stopping can be simpler.** You do not need to finish, commit or remember anything first, so the evening is not spent closing loops.
-- **Restarting costs less attention.** The handover and snapshot replace the 10 to 30 minutes typically spent working out "where was I?". That figure is our estimate, not a measurement.
-- **It adds no recurring obligations.** There are no notifications, streaks, check-ins or tracking. The tool does nothing until you open it, and every prompt is optional.
+- **Stopping can be simpler.** You do not need to finish or commit the work before leaving.
+- **Restarting costs less attention.** The handover and snapshot are meant to reduce the time spent working out where you left off. We have not measured that saving.
+- **It adds no recurring obligations.** There are no notifications, streaks or check-ins. The tool does nothing until you open it.
 
 ## Evidence for the judging criteria
 
