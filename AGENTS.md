@@ -18,6 +18,10 @@ The organiser's [deck](https://claude.echofold.ai/#/8), read on 29 October, supe
 
 ## Judging
 
+**The judge is Claude.** The organiser's judging agent is named Clawd and is described on [slide 10](https://claude.echofold.ai/#/10) as running on **Claude Opus 5.5**. Kevin reviews its top-three picks before announcement. Treat the model designation as the organiser's stated setup.
+
+Write for a Claude evaluator encountering the project for the first time: make the target user, compression-burnout problem, exact run steps, working core flow, and evidence of time returned easy to find. Map concrete evidence to each rubric criterion. State supported behavior and limitations plainly, and keep README claims consistent with the code. Do not assume a verbal presentation will supply missing context.
+
 | Weight | Criterion | Evidence |
 | --- | --- | --- |
 | 30% | Takes on the problem | Compression burnout, named audience, suggested direction or explained alternative. |
