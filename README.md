@@ -15,6 +15,8 @@ AI speeds up tasks, but people take on more work and lose breaks and evenings. B
 | Useful afterward and understandable from the README | 20% |
 | Returns time without adding work, alerts, or prompts | 20% |
 
+**Claude is the judge:** the organiser's Clawd agent, described as running on Claude Opus 5.5, evaluates the README and code or live site together with the submission description. Kevin reviews its top-three picks. The project must explain its purpose, setup, real functionality, and time returned clearly without relying on a spoken walkthrough. [Judging setup](https://claude.echofold.ai/#/10)
+
 ## Documents
 
 - [Agent instructions and internal schedule](AGENTS.md)
