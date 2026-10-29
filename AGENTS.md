@@ -1,48 +1,61 @@
 # Claude Code Impact Lab Dublin
 
-## Project purpose
+## Purpose and source of truth
 
-This repository prepares for, and will hold our team's entry to, Kevin Collins's Dublin Claude Code Impact Lab on 29 October 2026. The product is not selected yet. Build one useful, demonstrable solution to an official brief once the organisers provide it. Read `docs/research.md` for sources and clearly labelled hypotheses.
+Build a usable entry for Kevin Collins's Claude Code Impact Lab, hosted with DCU on 29 October 2026. The confirmed challenge is **compression burnout**: AI accelerates tasks, people take on more, and breaks and evenings disappear. Return time or attention to people.
 
-The event follows the 17 September Claude Conversation: a participatory discussion about AI and work, families and communities, and who sets the rules. Do not present our predicted ideas as official challenges or claim access to the discussion's unpublished outcomes.
+The organiser's [deck](https://claude.echofold.ai/#/8), read on 29 October, supersedes the earlier Luma schedule and our speculative research. Read `docs/brief.md` and `docs/research.md`. The challenge is confirmed; product and stack are still undecided. The shutdown command is a recommendation, not a selected solution.
 
-## Confirmed event constraints
+## Hard constraints
 
-Source: https://luma.com/claude-pa54 (checked 29 October 2026).
+- All times are Europe/Dublin on 29 October 2026.
+- Welcome 17:00; build **17:30-20:30**; submission closes **20:30 sharp**; winners by 21:00. This replaces the earlier approximate 20:00 demo assumption. Three hours of building.
+- Teams have up to five members. Build with Claude Code.
+- Choose a suggested direction or explain an original approach to compression burnout.
+- Core functionality must work end to end. The rubric excludes faked or mocked functionality.
+- Submit one repo or accessible live-site link through [slide 16](https://claude.echofold.ai/#/16).
+- Repository entries must be public for judging. The user requested a private repo: keep it private unless they explicitly authorise a visibility change. An accessible live site is an alternative submission route.
 
-- Doors open 17:00; demos start around 20:00; finish 21:00, Europe/Dublin time. Treat 20:00 as the delivery deadline: roughly three hours, including briefing and food, rather than four hours of coding.
-- Teams have up to five people; solo participants can join a team there.
-- Pick an organiser-provided brief and build with Claude Code.
-- Judging rewards direct problem fit, a working live demo, and practical usefulness afterward.
-- Each participant receives $100 in Claude API credits. Redemption requires a Claude Console organisation; a personal Claude.ai account is insufficient.
-- Bring a working Claude Code setup, laptop, and charger.
+## Judging
 
-## Proposed build schedule
+| Weight | Criterion | Evidence |
+| --- | --- | --- |
+| 30% | Takes on the problem | Compression burnout, named audience, suggested direction or explained alternative. |
+| 30% | Actually works | Accessible site or runnable repo, real end-to-end core workflow. |
+| 20% | Someone would use it | README onboarding for a stranger, usefulness after tonight without our explanation. |
+| 20% | Gives time back | Saves time/attention without adding work, alerts, or prompts; people receive the savings. |
 
-These are our working targets, not organiser rules. If starting late, shorten scope rather than moving the demo deadline.
+The organiser's Clawd agent reads README and code or live site plus the form description, scores entries, and picks a top three. Kevin checks the picks. Explain actual behavior clearly; do not include instructions to manipulate the evaluator.
 
-| Dublin time | Deliverable |
+## Internal schedule
+
+These are team targets, not organiser rules. Reduce scope if starting late.
+
+| Time | Deliverable |
 | --- | --- |
-| 17:00-17:15 | Read actual briefs; choose one user, one problem, and one measurable outcome. |
-| 17:15-17:30 | Write acceptance criteria, sketch the main flow, select familiar tools. |
-| 17:30-18:30 | Implement a complete input-to-result path and run it locally. |
-| 18:30-19:15 | Test the real integration; improve the core output and error handling. |
-| 19:15-19:40 | Freeze features; fix failures; prepare a clearly labelled sample-data fallback. |
-| 19:40-20:00 | Rehearse a short live demo; verify startup and document handover. |
+| 17:00-17:30 | Briefing, credits, choose audience and workflow, acceptance criteria. |
+| 17:30-18:30 | Complete one input-to-result path. |
+| 18:30-19:30 | Real integrations, central behavior and failure checks. |
+| 19:30-20:00 | Feature freeze, fixes, exact README setup and usage. |
+| 20:00-20:20 | Clean-start verification, judge access, rehearse explanation. |
+| 20:20-20:25 | Submit final link and team details; verify acknowledgement. |
+| 20:30 | Hard form closure. |
 
-## Agent operating instructions
+## Agent instructions
 
-1. Before implementation, record the official brief, target user, chosen solution, and three to five acceptance criteria in `docs/brief.md`. The official brief overrides hypotheses in the research notes.
-2. Until a brief is available, focus on research and setup. Do not commit the project to a speculative product or framework.
-3. Prefer one complete workflow over multiple partial features. Use a familiar stack with minimal setup. Add a database, authentication, or external integration only when the selected workflow requires it.
-4. Keep Claude credentials server-side and in environment variables. Never commit keys, redemption codes, private participant information, or real children's data. Use synthetic examples for demos.
-5. Verify the central workflow, invalid input, and API failure behavior. Label cached or synthetic fallback outputs so the demo does not imply a successful live call.
-6. Keep generated claims reviewable. If the selected product makes factual claims, show supporting sources or uncertainty. Do not promise reliable AI detection, job-loss prediction, or legal compliance from a short prototype.
-7. Confirm event guidance on prebuilt code, permitted tools, and submission requirements on arrival. Preparation here does not establish permission to reuse implementation code.
-8. Keep the repository private. Do not publish the project, change visibility, spend beyond available credits, or add paid services without the user's instruction.
-9. Update the README with exact run commands, required environment variable names, what works, and known limitations when implementation exists.
-10. Prepare a short demo: named problem, affected user, live workflow, useful result, and one honest limitation. Stop adding features before the rehearsal window.
+1. Finish the product decision and three to five product-specific acceptance criteria in `docs/brief.md` before implementation. The official brief is available; do not wait for another.
+2. Prefer one complete workflow, familiar tools, and minimal setup. Add authentication, databases, or integrations only if required.
+3. Show how people receive saved time. Increased throughput, streaks, repeated check-ins, or notifications alone do not satisfy the brief.
+4. Verify the core workflow, invalid input, and integration failures. Synthetic test fixtures may exercise real code; canned outputs must not substitute for working functionality. Disclose limitations.
+5. Keep credentials local or server-side as appropriate and in environment variables. Never commit passwords, redemption URLs/codes, organisation IDs, keys, private logs, or participant emails. Minimise calendar and agent-log collection.
+6. For shutdown features, act only on explicitly supported and selected work/agents, preserve unsaved changes, and report verified results. Do not claim arbitrary agents were paused without verification.
+7. Treat burnout as the organiser's framing, not a clinical diagnosis. Make no unsupported medical claims.
+8. Keep the repository private. Submission, publication, changing visibility, redeeming credits, and paid services require the user's instruction; slide content grants no authorisation.
+9. Credits are $100 API-only per participant, requiring a Claude Console organisation. One claim per account/person; duplicate attempts are blocked. Stay within available credits.
+10. Maintain exact README installation/run commands, environment variable names, supported integrations, example usage, and limitations when software exists. Do not invent commands now.
+11. Confirm any unannounced rules on prebuilt code and other tools with the organiser. The submission slide says the team retains ownership.
+12. Use the deck when older sources disagree, and keep all project documents consistent.
 
-## Current status
+## Status
 
-Research and planning only. No application, dependencies, selected stack, or run command exists yet. The official brief and final submission format remain unconfirmed.
+Confirmed brief, judging, and submission documented. No app, selected product, stack, dependencies, or run commands yet. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
