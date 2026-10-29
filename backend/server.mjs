@@ -6,17 +6,20 @@ import { isDeepStrictEqual } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import * as vault from './vault.mjs';
 import { generateHandover } from './claude.mjs';
+import { generateTensorxHandover } from './tensorx.mjs';
 
 // The API is intentionally unauthenticated for local non-browser clients.
 // Run only on loopback; Host and Origin checks protect against browser attacks,
 // not other processes or users on the same machine.
 export function getConfig(env = process.env) {
+  const provider = env.HANDOVER_PROVIDER ?? 'anthropic';
   return {
     port: Number(env.PORT || 3001),
     vaultRoot: path.resolve(env.VAULT_ROOT || path.join(os.homedir(), '.unfinished-work-vault')),
-    apiKey: env.ANTHROPIC_API_KEY,
-    model: env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
-    workspaceId: env.ANTHROPIC_WORKSPACE_ID,
+    provider,
+    apiKey: provider === 'anthropic' ? env.ANTHROPIC_API_KEY : provider === 'tensorx' ? env.TENSORX_API_KEY : undefined,
+    model: provider === 'anthropic' ? env.ANTHROPIC_MODEL || 'claude-sonnet-5-5' : provider === 'tensorx' ? env.TENSORX_MODEL : undefined,
+    workspaceId: provider === 'anthropic' ? env.ANTHROPIC_WORKSPACE_ID : undefined,
   };
 }
 
@@ -63,7 +66,33 @@ function readJson(req, maxBytes) {
 }
 
 export function createServer(options = {}) {
-  const config = { ...getConfig(), ...options };
+  const config = { ...getConfig({ ...process.env, HANDOVER_PROVIDER: options.provider ?? process.env.HANDOVER_PROVIDER }), ...options };
+  function providerName() {
+    if (config.provider === 'anthropic') return 'Claude';
+    if (config.provider === 'tensorx') return 'TensorX';
+    throw fail(503, 'Invalid HANDOVER_PROVIDER. Choose anthropic or tensorx.');
+  }
+  async function generate(context, notes) {
+    const name = providerName();
+    if (typeof config.apiKey !== 'string' || !config.apiKey.trim()) {
+      throw fail(503, name === 'Claude' ? 'Missing Claude API key. Set ANTHROPIC_API_KEY.' : 'Missing TensorX API key. Set TENSORX_API_KEY.');
+    }
+    if (config.provider === 'tensorx' && (typeof config.model !== 'string' || !config.model.trim())) {
+      throw fail(503, 'Missing TensorX model. Set TENSORX_MODEL.');
+    }
+    try {
+      const args = { context, notes, apiKey: config.apiKey, model: config.model, fetchImpl: config.fetchImpl, timeoutMs: config.timeoutMs };
+      return config.provider === 'tensorx' ? await generateTensorxHandover(args) : await generateHandover({ ...args, workspaceId: config.workspaceId });
+    } catch (error) {
+      if (config.provider !== 'tensorx') throw fail(502, error.message);
+      const status = /^TensorX request failed \(HTTP ([1-5]\d\d)\)$/.exec(error.message)?.[1];
+      if (status === '401') throw fail(502, 'TensorX authentication failed (HTTP 401); check the API key.');
+      if (status === '429') throw fail(502, 'TensorX rate limit reached (HTTP 429); try again later.');
+      if (status) throw fail(502, `TensorX API request failed (HTTP ${status}); check model access and provider status.`);
+      if (error.message === 'TensorX request timed out') throw fail(502, 'TensorX API request timed out.');
+      throw fail(502, 'TensorX API request failed; check the connection and provider response.');
+    }
+  }
   const maxBytes = config.maxBodyBytes ?? 256 * 1024;
   const frontendOrigins = new Set(config.allowedOrigins ?? ['http://localhost:5173', 'http://127.0.0.1:5173']);
   // Cap both count and bytes; all state is process-local and expires, including drafts.
@@ -140,7 +169,7 @@ export function createServer(options = {}) {
         ensureCapturable(state.context.git);
         const previewId = randomUUID();
         state.notes = notes; state.previewId = previewId; state.phase = 'preview';
-        return json(res, 200, { previewId, provider: 'Claude', context: JSON.stringify({ context: state.context, notes }) });
+        return json(res, 200, { previewId, provider: providerName(), context: JSON.stringify({ context: state.context, notes }) });
       }
       if (req.method === 'POST' && pathname === '/api/handover/generate') {
         const body = await readJson(req, maxBytes);
@@ -151,11 +180,7 @@ export function createServer(options = {}) {
         state.phase = 'generating'; delete state.previewId;
         try {
           await checkReviewed(state); valid(inspectionId, state, revision);
-          if (!config.apiKey) throw fail(503, 'Missing Claude API key. Set ANTHROPIC_API_KEY.');
-          let handover;
-          try {
-            handover = await generateHandover({ context: state.context, notes: state.notes, apiKey: config.apiKey, model: config.model, workspaceId: config.workspaceId, fetchImpl: config.fetchImpl });
-          } catch (error) { throw fail(502, error.message); }
+          const handover = await generate(state.context, state.notes);
           await checkReviewed(state); valid(inspectionId, state, revision);
           state.phase = 'generated';
           return json(res, 200, { handover });
@@ -187,14 +212,7 @@ export function createServer(options = {}) {
         const inspected = await vault.inspectProject(body.projectPath);
         if (!isDeepStrictEqual(body.context, inspected.contextPreview) || !isDeepStrictEqual(body.capturePreview, inspected.capturePreview)) throw fail(409, 'Project context or capture preview changed; inspect and review again');
         ensureCapturable(inspected.git);
-        if (!config.apiKey) throw fail(503, 'Missing Claude API key. Set ANTHROPIC_API_KEY.');
-        let handover;
-        try {
-          handover = await generateHandover({ context: body.context, notes: body.notes, apiKey: config.apiKey, model: config.model, workspaceId: config.workspaceId, fetchImpl: config.fetchImpl });
-        } catch (error) {
-          // The Claude module supplies sanitized errors, never upstream response bodies.
-          throw fail(502, error.message);
-        }
+        const handover = await generate(body.context, body.notes);
         const current = await vault.inspectProject(body.projectPath);
         if (!isDeepStrictEqual(body.context, current.contextPreview) || !isDeepStrictEqual(body.capturePreview, current.capturePreview)) throw fail(409, 'Project context or capture preview changed; inspect and review again');
         const record = await vault.createSnapshot({ projectPath: body.projectPath, vaultRoot: config.vaultRoot, notes: body.notes, handover, expectedContext: body.context, expectedCapturePreview: body.capturePreview });

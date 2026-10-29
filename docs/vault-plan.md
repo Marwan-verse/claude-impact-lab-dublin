@@ -15,11 +15,10 @@ The primary user is a developer using Claude Code who needs to stop with a half-
 1. Choose a local Git project.
 2. Review project location, current branch and commit, changed/staged/untracked files, and snapshot exclusions.
 3. Optionally describe the goal, known issues, and the next step.
-4. Capture the permitted project files into a local vault and create a manifest.
-5. Send selected context to Claude to generate an editable handover. Show what will be sent first; do not send source files by default.
-6. Review the handover and save the experiment.
+4. Prepare and review the outbound context and selected provider, then explicitly consent to generate an editable handover. Do not send source files by default.
+5. Review the handover and save the experiment, capturing permitted project files into a local vault with a manifest.
 
-The handover separates **checked facts**, **user notes**, and **Claude's interpretation**. It states the goal, current changes, unresolved issues, and one useful next action. Unverified statements must not appear as checked facts.
+The handover separates **checked facts**, **user notes**, and **model interpretation**. It states the goal, current changes, unresolved issues, and one useful next action. Unverified statements must not appear as checked facts.
 
 ### Return to work
 
@@ -35,7 +34,7 @@ Snapshot integrity verifies captured files, not that the application runs or tha
 
 - Local Git project inspection: branch, commit, Git status, setup files.
 - Local snapshot of explicitly permitted files, with paths and hashes in a manifest.
-- Claude-generated editable handover based on selected evidence and user notes.
+- Provider-generated editable handover based on selected evidence and user notes.
 - Dashboard of saved experiments and a detail screen.
 - Integrity check and real restoration to a new folder.
 - Clear success, failure, exclusion, and limitation states.
@@ -56,13 +55,13 @@ Three sections: **The short version** (goal, current state, next step); **What w
 
 ## Proposed architecture
 
-- Frontend: React, Vite, TypeScript.
+- Frontend: React and Vite.
 - Local backend: Node.js HTTP server, required for local project inspection and restoration.
 - Local storage: snapshots, manifests, and JSON experiment metadata.
 - Git: local commands for state inspection.
-- Claude API: handover generation, using only selected context.
+- Anthropic (default) or TensorX API: handover generation using only selected context. See the [README](../README.md) for provider configuration and hidden TensorX key entry.
 
-Capture: select project → inspect Git and setup evidence → copy permitted files → write manifest → verify → generate handover → user review → save.
+Capture: select project → inspect Git and setup evidence → review provider and exact context → consent and generate handover → user review → save permitted files and manifest.
 
 Restore: select experiment → verify manifest → choose new destination → restore files → report actual results and outstanding setup.
 
@@ -82,7 +81,7 @@ Exclude `.env` files, dependencies, and build output by default; make exclusions
 | `POST /api/vaults/:id/verify` | Check snapshot integrity. |
 | `POST /api/vaults/:id/restore` | Restore to a new destination. |
 
-The local backend implements these endpoints; see `docs/backend-api.md` for the request and response fields, consent requirements, limitations, and verification status. Frontend integration is being checked separately. Live Claude access is not yet verified.
+The local backend and frontend implement these endpoints; see `docs/backend-api.md` for the request and response fields, consent requirements, limitations, and verification status. Live Anthropic and live TensorX access have not been verified. TensorX may bill separately; do not assume Anthropic event credits apply. The event requires building with Claude Code; confirm alternative-model eligibility with the organiser. The organiser's Claude judge is unchanged.
 
 ## Two-person work split
 
@@ -98,13 +97,13 @@ The local backend implements these endpoints; see `docs/backend-api.md` for the 
 
 Done means a user can complete the actual capture → inspect → verify → restore flow from the interface, with understandable errors and no hidden manual steps.
 
-### Person 2: capture, Claude, and recovery
+### Person 2: capture, handover generation, and recovery
 
 1. Set up the local Node server and vault storage.
 2. Inspect Git state and project setup evidence.
 3. Capture permitted files with visible exclusions and generate a manifest.
 4. Verify snapshot integrity and report failures.
-5. Integrate Claude for an editable, evidence-grounded handover.
+5. Integrate the selected model provider for an editable, evidence-grounded handover.
 6. Restore into a new folder with path and destination checks.
 7. Handle invalid projects, unavailable Git/API, missing files, and destination conflicts.
 8. Write exact setup instructions and prepare a real half-finished example project.
@@ -123,7 +122,7 @@ All times 29 October 2026, Europe/Dublin; team targets, not organiser rules. Red
 | --- | --- | --- |
 | 17:30–17:45 | Sketch screens, colours, contract. | Define capture, exclusions, contract. |
 | 17:45–18:30 | Dashboard, capture form, cards. | Git inspection and snapshot creation. |
-| 18:30–19:00 | Detail and recovery UI. | Manifest verification and Claude handover. |
+| 18:30–19:00 | Detail and recovery UI. | Manifest verification and model handover. |
 | 19:00–19:30 | Connect real endpoints and states. | Restore to new folder. |
 | 19:30–20:00 | Polish and demo walkthrough. | Test recovery, failures, README. |
 | 20:00–20:15 | Rehearse together. | Verify restored files and setup. |
@@ -136,7 +135,7 @@ If time is tight, cut animation and advanced context capture first. Preserve act
 
 - [ ] Select a real local Git project and save it in the Vault.
 - [ ] Capture Git state and a snapshot of permitted files.
-- [ ] Produce an editable Claude handover with identified evidence.
+- [ ] Produce an editable model handover with identified evidence.
 - [ ] Show exclusions and distinguish checks from unverified claims.
 - [ ] Verify integrity and restore actual files to a new directory.
 - [ ] Leave the original project unchanged.

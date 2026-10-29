@@ -153,3 +153,45 @@ test('generates a labelled handover using Claude Messages over HTTP', async (t) 
   assert.match(JSON.stringify(received.body.messages), /feature/);
   assert.match(JSON.stringify(received.body.messages), /The API call is failing/);
 });
+
+for (const status of [307, 308]) {
+  test(`rejects Claude HTTP ${status} redirects without forwarding sensitive data`, async (t) => {
+    const received = [];
+    const destination = http.createServer(async (req, res) => {
+      const request = { body: '' };
+      received.push(request);
+      for await (const chunk of req) request.body += chunk;
+      res.end(JSON.stringify({ content: [{ type: 'text', text: 'unexpected' }] }));
+    });
+    await new Promise(resolve => destination.listen(0, '127.0.0.1', resolve));
+    t.after(() => { destination.closeAllConnections(); return new Promise(resolve => destination.close(resolve)); });
+    let initialBody = '';
+    const initial = http.createServer(async (req, res) => {
+      for await (const chunk of req) initialBody += chunk;
+      res.writeHead(status, { location: `http://127.0.0.1:${destination.address().port}/redirected` });
+      res.end();
+    });
+    await new Promise(resolve => initial.listen(0, '127.0.0.1', resolve));
+    t.after(() => { initial.closeAllConnections(); return new Promise(resolve => initial.close(resolve)); });
+    let options;
+    let failure;
+    try {
+      await generateHandover({
+        context: { privateMetadata: 'sensitive-metadata' }, notes: 'sensitive-notes',
+        apiKey: 'synthetic-key', model: 'test-model', workspaceId: 'synthetic-workspace',
+        fetchImpl: (url, requestOptions) => {
+          assert.equal(url, 'https://api.anthropic.com/v1/messages');
+          options = requestOptions;
+          return fetch(`http://127.0.0.1:${initial.address().port}/`, requestOptions);
+        },
+      });
+    } catch (error) { failure = error; }
+    assert.match(initialBody, /sensitive-metadata/);
+    assert.match(initialBody, /sensitive-notes/);
+    assert.deepEqual(received, [], 'redirect destination must receive no request or body');
+    assert.equal(options.redirect, 'error');
+    assert.ok(failure, 'redirect must reject the request');
+    assert.match(failure.message, /network|connect/i);
+    assert.doesNotMatch(failure.message, /synthetic-key|synthetic-workspace|sensitive-metadata|sensitive-notes/);
+  });
+}

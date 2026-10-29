@@ -24,6 +24,18 @@ test('defaults to the supported Sonnet model and accepts an override', async () 
   assert.equal(getConfig({}).model, 'claude-sonnet-5-5');
   assert.equal(getConfig({ ANTHROPIC_MODEL: 'custom-model' }).model, 'custom-model');
 });
+test('provider configuration isolates credentials and requires an explicit TensorX model', async () => {
+  const { getConfig } = await import('../backend/server.mjs');
+  const env = { ANTHROPIC_API_KEY: 'anthropic-only', ANTHROPIC_MODEL: 'claude-custom', HANDOVER_PROVIDER: 'tensorx' };
+  const missing = getConfig(env);
+  assert.equal(missing.provider, 'tensorx');
+  assert.equal(missing.apiKey, undefined);
+  assert.equal(missing.model, undefined);
+  const configured = getConfig({ ...env, TENSORX_API_KEY: 'tensor-only', TENSORX_MODEL: 'tensor-model' });
+  assert.equal(configured.apiKey, 'tensor-only');
+  assert.equal(configured.model, 'tensor-model');
+  assert.equal(getConfig({}).provider, 'anthropic');
+});
 async function request(base, path, body, method) {
   const response = await post(base + path, body, method);
   return { response, body: await response.json() };
@@ -36,6 +48,146 @@ async function start(t, options = {}) {
   t.after(() => new Promise(resolve => server.close(resolve)));
   return `http://127.0.0.1:${server.address().port}`;
 }
+
+test('TensorX frontend preview is consented and sent unchanged before saving real files', async t => {
+  const { root, project } = await fixture(t);
+  let sent;
+  const base = await start(t, { provider: 'tensorx', vaultRoot: path.join(root, 'vault'), apiKey: 'tensor-test-secret', model: 'tensor-test-model', fetchImpl: async (url, options) => {
+    sent = { url, options, body: JSON.parse(options.body) };
+    return Response.json({ choices: [{ message: { content: 'Resume carefully.' } }] });
+  } });
+  const inspected = await request(base, '/api/inspect', { path: project });
+  const notes = { goal: 'Ship', issue: 'Failing test', nextStep: 'Fix test' };
+  const preview = await request(base, '/api/handover/preview', { inspectionId: inspected.body.inspectionId, ...notes });
+  assert.equal(preview.response.status, 200);
+  assert.equal(preview.body.provider, 'TensorX');
+  assert.equal(preview.body.context, JSON.stringify({ context: inspected.body.contextPreview, notes }));
+  assert.equal(sent, undefined);
+  const generated = await request(base, '/api/handover/generate', { previewId: preview.body.previewId });
+  assert.equal(generated.response.status, 200, JSON.stringify(generated.body));
+  assert.equal(sent.url, 'https://api.tensorx.ai/v1/chat/completions');
+  assert.equal(new Headers(sent.options.headers).get('authorization'), 'Bearer tensor-test-secret');
+  assert.equal(sent.body.model, 'tensor-test-model');
+  assert.equal(sent.body.messages.find(m => m.role === 'user').content, preview.body.context);
+  assert.match(generated.body.handover, /TensorX/);
+  assert.doesNotMatch(generated.body.handover, /Claude/);
+  assert.doesNotMatch(JSON.stringify(generated.body), /tensor-test-secret/);
+  const saved = await request(base, '/api/vaults', { inspectionId: inspected.body.inspectionId, handover: generated.body.handover });
+  assert.equal(saved.response.status, 201, JSON.stringify(saved.body));
+  const dest = path.join(root, 'restored-tensor');
+  assert.equal((await request(base, `/api/vaults/${saved.body.id}/restore`, { destination: dest })).response.status, 200);
+  assert.equal(await readFile(path.join(dest, 'file.txt'), 'utf8'), 'unfinished work');
+});
+
+test('TensorX direct capture requires confirmation and captures the reviewed git files', async t => {
+  const { root, project } = await fixture(t);
+  const sent = [];
+  const base = await start(t, { provider: 'tensorx', vaultRoot: path.join(root, 'vault'), apiKey: 'tensor-direct-secret', model: 'direct-model', fetchImpl: async (url, options) => {
+    sent.push({ url, options, body: JSON.parse(options.body) });
+    return Response.json({ choices: [{ message: { content: 'Finish safely.' } }] });
+  } });
+  const inspected = (await request(base, '/api/inspect', { projectPath: project })).body;
+  const input = { projectPath: project, context: inspected.contextPreview, capturePreview: inspected.capturePreview, notes: 'Finish this' };
+  assert.equal((await request(base, '/api/vaults', input)).response.status, 400);
+  assert.equal(sent.length, 0);
+  const created = await request(base, '/api/vaults', { ...input, confirmed: true });
+  assert.equal(created.response.status, 201, JSON.stringify(created.body));
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].url, 'https://api.tensorx.ai/v1/chat/completions');
+  assert.equal(new Headers(sent[0].options.headers).get('authorization'), 'Bearer tensor-direct-secret');
+  assert.equal(sent[0].body.model, 'direct-model');
+  assert.equal(sent[0].body.messages.find(m => m.role === 'user').content, JSON.stringify({ context: input.context, notes: input.notes }));
+  assert.match(created.body.handover, /TensorX/);
+  assert.doesNotMatch(JSON.stringify(created.body), /tensor-direct-secret|Claude/);
+  const destination = path.join(root, 'direct-restore');
+  assert.equal((await request(base, `/api/vaults/${created.body.id}/restore`, { destination })).response.status, 200);
+  assert.equal(await readFile(path.join(destination, 'file.txt'), 'utf8'), 'unfinished work');
+});
+
+test('provider configuration failures never reach upstream on either generation path', async t => {
+  const { root, project } = await fixture(t);
+  for (const scenario of [
+    { provider: 'tensorx', apiKey: '', model: 'valid', expected: /TENSORX_API_KEY/ },
+    { provider: 'tensorx', apiKey: 'tensor-test-secret', model: '', expected: /TENSORX_MODEL/ },
+    { provider: 'invalid', apiKey: 'tensor-test-secret', model: 'valid', expected: /HANDOVER_PROVIDER/ },
+  ]) {
+    let calls = 0;
+    const base = await start(t, { ...scenario, vaultRoot: path.join(root, `vault-${scenario.provider}-${scenario.model}`), fetchImpl: async () => { calls++; throw new Error('should not call'); } });
+    const inspected = (await request(base, '/api/inspect', { projectPath: project })).body;
+    const direct = await request(base, '/api/vaults', { projectPath: project, context: inspected.contextPreview, capturePreview: inspected.capturePreview, notes: '', confirmed: true });
+    assert.equal(direct.response.status, 503);
+    assert.match(direct.body.error, scenario.expected);
+    const preview = await request(base, '/api/handover/preview', { inspectionId: inspected.inspectionId, goal: '', issue: '', nextStep: '' });
+    if (scenario.provider === 'invalid') {
+      assert.equal(preview.response.status, 503);
+      assert.match(preview.body.error, scenario.expected);
+    } else {
+      assert.equal(preview.body.provider, 'TensorX');
+      const generated = await request(base, '/api/handover/generate', { previewId: preview.body.previewId });
+      assert.equal(generated.response.status, 503);
+      assert.match(generated.body.error, scenario.expected);
+    }
+    assert.equal(calls, 0);
+    assert.deepEqual(await (await fetch(base + '/api/vaults')).json(), []);
+  }
+});
+
+test('TensorX rejects changed project during generation and sanitizes upstream failures', async t => {
+  const { root, project } = await fixture(t);
+  let mode = 'change';
+  const base = await start(t, { provider: 'tensorx', vaultRoot: path.join(root, 'vault'), apiKey: 'tensor-private-key', model: 'tensor-model', fetchImpl: async () => {
+    if (mode === 'change') {
+      await writeFile(path.join(project, 'file.txt'), 'changed while generating');
+      return Response.json({ choices: [{ message: { content: 'Draft' } }] });
+    }
+    throw new Error('tensor-private-key and private upstream details');
+  } });
+  for (const current of ['change', 'failure']) {
+    mode = current;
+    const inspected = (await request(base, '/api/inspect', { path: project })).body;
+    const preview = (await request(base, '/api/handover/preview', { inspectionId: inspected.inspectionId, goal: '', issue: '', nextStep: '' })).body;
+    const generated = await request(base, '/api/handover/generate', { previewId: preview.previewId });
+    assert.equal(generated.response.status, mode === 'change' ? 409 : 502);
+    assert.doesNotMatch(JSON.stringify(generated.body), /tensor-private-key|private upstream details/);
+    assert.ok((await request(base, '/api/vaults', { inspectionId: inspected.inspectionId, handover: 'forged' })).response.status >= 400);
+  }
+  assert.deepEqual(await (await fetch(base + '/api/vaults')).json(), []);
+});
+
+test('TensorX authentication failures are actionable without leaking the response', async t => {
+  const { root, project } = await fixture(t);
+  const base = await start(t, { provider: 'tensorx', vaultRoot: path.join(root, 'vault'), apiKey: 'dummy', model: 'model', fetchImpl: async () => new Response('private upstream body', { status: 401 }) });
+  const inspected = (await request(base, '/api/inspect', { path: project })).body;
+  const preview = (await request(base, '/api/handover/preview', { inspectionId: inspected.inspectionId, goal: '', issue: '', nextStep: '' })).body;
+  const generated = await request(base, '/api/handover/generate', { previewId: preview.previewId });
+  assert.equal(generated.response.status, 502);
+  assert.match(generated.body.error, /401/);
+  assert.doesNotMatch(JSON.stringify(generated.body), /private upstream body|dummy/);
+});
+
+test('selecting TensorX cannot inherit an Anthropic environment key or model', async t => {
+  const { root, project } = await fixture(t);
+  const script = `
+    import { createServer } from './backend/server.mjs';
+    let calls = 0;
+    const server = createServer({ provider: 'tensorx', fetchImpl: async () => { calls++; throw new Error('unexpected network'); } });
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const base = 'http://127.0.0.1:' + server.address().port;
+    const post = async (path, body) => { const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return [r.status, await r.json()]; };
+    const [, inspected] = await post('/api/inspect', { projectPath: process.argv[1] });
+    const result = await post('/api/vaults', { projectPath: process.argv[1], context: inspected.contextPreview, capturePreview: inspected.capturePreview, notes: '', confirmed: true });
+    console.log(JSON.stringify({ result, calls }));
+    await new Promise(resolve => server.close(resolve));
+  `;
+  const output = execFileSync(process.execPath, ['--input-type=module', '-e', script, project], {
+    cwd: new URL('..', import.meta.url), env: { PATH: process.env.PATH, HOME: root, TMPDIR: root, ANTHROPIC_API_KEY: 'anthropic-only-secret', ANTHROPIC_MODEL: 'anthropic-only-model' }, encoding: 'utf8',
+  });
+  const { result, calls } = JSON.parse(output);
+  assert.equal(result[0], 503);
+  assert.match(result[1].error, /TENSORX_API_KEY/);
+  assert.doesNotMatch(output, /anthropic-only-secret/);
+  assert.equal(calls, 0);
+});
 
 test('rejects hostile browser origins before handling requests', async t => {
   const base = await start(t);

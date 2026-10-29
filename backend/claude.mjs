@@ -9,6 +9,7 @@ export async function generateHandover({ context, notes, apiKey, model, workspac
     try {
       response = await fetchImpl('https://api.anthropic.com/v1/messages', {
         method: 'POST',
+        redirect: 'error',
         signal: controller.signal,
         headers: {
           'content-type': 'application/json',
