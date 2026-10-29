@@ -19,6 +19,7 @@ AI speeds up tasks, but people take on more work and lose breaks and evenings. B
 
 ## Documents
 
+- [Detailed Unfinished Work Vault plan and two-person workload](docs/vault-plan.md)
 - [Agent instructions and internal schedule](AGENTS.md)
 - [Confirmed brief and product decision](docs/brief.md)
 - [Research, deck findings, credits, and submission details](docs/research.md)
@@ -39,4 +40,4 @@ One GitHub repo or accessible live-site link per team. Repo submissions must be 
 
 ## Development status
 
-Documentation only. Challenge confirmed; product and stack undecided. A shutdown command is recommended but not selected. Run commands will be added when software exists. ECC 2.2.3 is installed in the user's Claude Code and Codex environments.
+Documentation only. The selected concept is **The Unfinished Work Vault**: capture unfinished local work, verify its snapshot, and restore it with a restart guide. The proposed stack is React/Vite/TypeScript and a local Node backend. Run commands will be added when software exists. ECC 2.2.3 is installed in the user's Claude Code and Codex environments.
