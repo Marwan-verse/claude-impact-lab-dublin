@@ -4,7 +4,7 @@
 
 Build a usable entry for Kevin Collins's Claude Code Impact Lab, hosted with DCU on 29 October 2026. The confirmed challenge is **compression burnout**: AI accelerates tasks, people take on more, and breaks and evenings disappear. Return time or attention to people.
 
-The organiser's [deck](https://claude.echofold.ai/#/8), read on 29 October, supersedes the earlier Luma schedule and our speculative research. Read `docs/brief.md` and `docs/research.md`. The challenge is confirmed; product and stack are still undecided. The shutdown command is a recommendation, not a selected solution.
+The organiser's [deck](https://claude.echofold.ai/#/8), read on 29 October, supersedes the earlier Luma schedule and our speculative research. The selected concept is **The Unfinished Work Vault**, a local project capture, verification, handover, and recovery tool. Read `docs/vault-plan.md`, `docs/brief.md`, and `docs/research.md`. The proposed stack is React/Vite/TypeScript and a local Node backend; implementation decisions remain open.
 
 ## Hard constraints
 
@@ -62,4 +62,4 @@ These are team targets, not organiser rules. Reduce scope if starting late.
 
 ## Status
 
-Confirmed brief, judging, and submission documented. No app, selected product, stack, dependencies, or run commands yet. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
+The Unfinished Work Vault has been selected and planned. No app, dependencies, or run commands exist yet. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
