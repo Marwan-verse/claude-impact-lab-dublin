@@ -26,3 +26,55 @@ main h1:focus{outline:none}
 .preview-block h3{color:#eef0e3;font-size:14px;margin:0 0 8px}
 .form label.confirm-context{display:flex;align-items:flex-start;gap:10px;line-height:1.6;font-weight:500;margin:14px 0 18px}
 .confirm-context input{width:auto;flex:none;margin:3px 0 0;accent-color:#c5d8bc}
+
+/* Vault visual system: warm paper, charcoal shelves, restrained sage. */
+:root { color:#e2dfd5; background:#111716; }
+.sidebar { background:#111716; border-color:#29312d; }
+.brand { color:#e8e3d8; font-family:Georgia,serif; font-size:15px; line-height:1.22; }
+.brand b { color:#e8e3d8; font-family:Georgia,serif; font-size:18px; font-weight:400; }
+.brand-mark { border-color:#8e9982; color:#c9cfbb; border-radius:6px; }
+.side-caption,.side-label { color:#aaa99c; }
+.side-rule,.card-rule,.form-divider { background:#343b35; }
+.side-link { color:#d2d0c4; }
+.side-link.active { background:#29332d; color:#f1ede3; }
+.side-link span,.side-bottom p { color:#a8b1a0; }
+.side-bottom { border-color:#343b35; color:#d8dbce; }
+.main { background:#141a18; }
+.topbar,footer { border-color:#2c342f; }
+.breadcrumb,.top-note { color:#a5aa9d; }
+.breadcrumb span { color:#e7e4d9; }
+.content { width:min(1180px,90%); }
+.intro { grid-template-columns:1.25fr .75fr; min-height:365px; border-color:#303731; }
+.intro h1,.flow-heading h1,.detail-head h1 { color:#eae5db; font-family:Georgia,serif; letter-spacing:-.025em; }
+.intro h1 em { color:inherit; font-style:normal; }
+.intro p,.flow-heading p,.detail-head p { color:#c5c4b8; }
+.eyebrow,.section-kicker { color:#b3bca9; }
+.primary { background:#657c65; color:#fffdf5; }
+.primary:hover { background:#778f74; }
+.secondary { background:#2d3a31; border-color:#546657; color:#e5ecdf; }
+.secondary:hover { background:#3c4d3f; }
+.library { padding-top:38px; }
+.section-heading h2 { color:#eae5da; font-family:Georgia,serif; }
+.empty { background:#1a211d; border-color:#4b5c4f; border-radius:8px; }
+.cards { display:flex; flex-direction:column; gap:10px; }
+.card { min-height:0; display:grid; grid-template-columns:56px minmax(170px,1.2fr) minmax(110px,.7fr) minmax(160px,1fr) auto; align-items:center; gap:16px; background:#1a211e; border:1px solid #323c34; border-radius:8px; padding:16px 18px; }
+.card:hover { background:#202a23; border-color:#8ca58a; }
+.card-top { grid-row:1 / span 3; grid-column:1; }
+.card-top>svg { display:none; }
+.card-icon { display:grid; place-items:center; width:50px; height:50px; padding:0; background:#526954; color:#e0e7d7; }
+.card h3 { grid-column:2; grid-row:1; font-family:Georgia,serif; font-size:18px; font-weight:400; margin:0; }
+.card-date { grid-column:3; grid-row:1; color:#bdc1b2; }
+.card-status { grid-column:3; grid-row:2; margin:0; }
+.card-rule { display:none; }
+.card-caption { grid-column:4; grid-row:1; color:#a9b2a2; }
+.card p { grid-column:4; grid-row:2; margin:0; color:#e0e2d8; }
+.card-link { grid-column:5; grid-row:1 / span 2; margin:0; white-space:nowrap; }
+.footer-note { border-color:#303731; color:#acb7a8; }
+.panel { background:#1c2620; border-color:#38473b; border-radius:8px; }
+input,textarea { background:#151d19; border-color:#536457; color:#f1eee4; }
+.evidence-overview,.evidence { background:#17201b; border-color:#3d4c40; }
+.notice { background:#24362a; border-color:#4d6851; }
+.notice.error { background:#382b25; border-color:#855f49; }
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible { outline:3px solid #d7c797; outline-offset:3px; }
+@media(max-width:1000px) { .card { grid-template-columns:50px minmax(120px,1fr) minmax(120px,1fr); } .card-caption,.card p { grid-column:3; } .card-date,.card-status { grid-column:2; } .card-date { grid-row:2; } .card-status { grid-row:3; } .card-link { grid-column:3; grid-row:3; } }
+@media(max-width:640px) { .intro { display:flex; } .card { grid-template-columns:46px minmax(0,1fr); gap:8px 14px; } .card-top { grid-row:1 / span 3; } .card h3,.card-date,.card-status,.card-caption,.card p,.card-link { grid-column:2; grid-row:auto; } .card-link { margin-top:6px; } }
