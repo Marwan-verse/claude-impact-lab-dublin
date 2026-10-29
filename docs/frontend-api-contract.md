@@ -23,3 +23,15 @@ The backend must inspect and restore real files safely, reject existing destinat
 - Define verification and restore result schemas, including explicit success/failure, details, and what remains unverified. The UI reports explicit `ok`, `success`, or `verified` false values as problems; other structures still need joint agreement.
 - Bind the local service to loopback, validate browser origins, protect local paths and symlinks, and never overwrite existing restore destinations. These are backend requirements, not verified properties of this frontend.
 - Test the complete workflow against real Git projects and the real service; a temporary UI test fixture does not prove filesystem recovery or Claude integration.
+
+## Proposed next contract: preview, generate, review, save
+
+This is an integration proposal, not an implemented API. Agree the schema with Person 2 before changing either side. It separates inspection and outbound AI use so the frontend can show precisely what the service intends to send.
+
+1. `POST /api/inspect` with `{ path }` returns an inspection ID, checked facts (branch, commit, changed files, setup evidence), included paths, exclusions, and warnings. Keep factual evidence distinct from user notes.
+2. `POST /api/handover/preview` with `{ inspectionId, goal, issue, nextStep }` returns `{ previewId, provider, context }`, where `context` is the exact serialised material the service will send. It performs no model call. It must exclude credentials and source contents by default. The frontend presents that material for review.
+3. `POST /api/handover/generate` with `{ previewId }` sends only the reviewed preview and returns the generated draft. A preview must expire or be invalidated when its inputs change. The service should reject a missing, expired, or changed preview rather than silently changing its contents.
+4. The frontend labels the generated draft as AI interpretation and allows the user to edit it. `POST /api/vaults` accepts the inspection ID and edited handover, creates the snapshot, verifies it, and returns the saved vault. The service reports any failure without a success-like response.
+5. Define an update endpoint for later handover edits. Until it exists, editing a saved handover remains explicitly view-only.
+
+Verification responses should state `{ ok, checkedFiles, problems }`; restoration should state `{ ok, destination, restoredFiles, warnings }`. These example fields need agreement and validation. The browser must render checked facts, user notes, and AI text in separate sections and show raw details only as an optional inspection view. A successful integrity check must not be shown as proof the application or its environment runs.
