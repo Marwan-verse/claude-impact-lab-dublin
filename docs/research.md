@@ -1,51 +1,91 @@
-# Event research and likely challenge areas
+# Confirmed event research and deck notes
 
-Researched 29 October 2026. Separate confirmed evidence from predictions below. No official challenge brief, transcript, recording, or discussion outcome was located in the public sources checked.
+Updated 29 October 2026 after reading all 17 slides using access supplied by the user. The deck confirms the challenge and overrides earlier speculation and the approximate Luma schedule. Do not store the password or credit redemption URL in tracked files.
 
-## What the earlier event actually was
+## Source priority and corrections
 
-The relevant precursor was **Dublin | Claude Conversation, 17 September 2026**, rather than evidence of a single technical lecture by Kevin. Its official page describes roughly fifty participants discussing unresolved AI questions, with the subsequent build event addressing problems raised in that room.
+1. [Event deck](https://claude.echofold.ai/#/1): confirmed brief, judging, schedule, and submission instructions.
+2. [October listing](https://luma.com/claude-pa54): earlier general description.
+3. [September listing](https://luma.com/claude-0n1a) and [Kevin's announcement](https://www.linkedin.com/posts/kevincollinsirl_claudeconversations-claudecode-dublin-activity-7497978596511166464--qem): discussion-to-build background.
 
-Kevin's own announcement describes a conversation about jobs, Irish society, and family life, without demos or screens, followed by an October Impact Lab. This corroborates the link between the two events. It does not reveal which specific problems participants ultimately selected.
+| Earlier understanding | Deck correction |
+| --- | --- |
+| Exact brief unknown; work/family/governance predictions | Compression burnout, six suggested approaches, original ideas allowed. |
+| Approximate 20:00 demos | Build 17:30-20:30; hard 20:30 submission closure; winners by 21:00. |
+| General judging | Four criteria weighted 30/30/20/20. |
+| Submission/access unclear | One repo or live-site link per team; repo entries must be public. |
 
-Primary sources:
+The earlier predicted work planner, family kit, concern mapper, policy explainer, and claim-checking exercise were hypotheses. They are retired as planning defaults and are not official briefs.
 
-- [September conversation event](https://luma.com/claude-0n1a)
-- [Kevin's announcement](https://www.linkedin.com/posts/kevincollinsirl_claudeconversations-claudecode-dublin-activity-7497978596511166464--qem)
-- [October Impact Lab event](https://luma.com/claude-pa54)
+## September discussion and selected problem
 
-## Evidence and limits
+[Slide 7](https://claude.echofold.ai/#/7): roughly fifty people at Toast on 17 September, two hours, no talks or demos. Discussion covered jobs, effects on people/families/communities, and who sets rules. Closing cards asked where Dublin should start.
 
-The October page groups the conversation into three themes: work; personal, family, and community effects; and decision-making about AI rules. It says organisers will turn concrete problems from the discussion into briefs posted on the event page. The version checked still described that process without listing the individual briefs.
+[Slide 8](https://claude.echofold.ai/#/8): answers included bus routes, homelessness, infrastructure, mental-health access, phone addiction, property hoarding, first jobs requiring experience, Lough Neagh pollution, and repeated burnout/cognitive stress. The selected problem is **compression burnout**: AI accelerates tasks, workload expands, and breaks/evenings vanish. This reports the organiser's framing rather than establishing a clinical diagnosis.
 
-The organiser's [events listing](https://echofold.ai/events) and [profile](https://echofold.ai/about) establish wider speaking activity, but neither provides evidence that another technical talk determines this hackathon's problem. Do not infer the challenge from unrelated agent engineering talks or Kevin's earlier hackathon projects.
+## Official directions
 
-The event date is also corroborated by [Nomad Watch's listing](https://nomad.watch/events/dublin-claude-code-impact-lab-20261029). Use the official Luma page and on-site announcements for schedule decisions. An indexed repost of another announcement mentioned 20:30 demos; the official page checked says around 20:00, so use the earlier time for planning.
+[Slide 13](https://claude.echofold.ai/#/13) offers workload/break tracking, an understanding check before accepting major changes, a shutdown command, tracking the destination of saved time, recovery between hard helpline calls, and weekly group AI learning. `docs/brief.md` records each audience and intended behavior. Original ideas must explain their fit. The common purpose is returning time to people. No product is selected; the shutdown command remains a recommendation.
 
-## Candidate problems: predictions, not official briefs
+## Schedule and support
 
-These concepts are inferred from the three announced themes. Their ordering reflects preparation value and a small demo scope, not a measured probability that organisers will choose them.
+[Slide 9](https://claude.echofold.ai/#/9), 29 October 2026, Europe/Dublin:
 
-| Candidate | Specific problem and user | Feasible evening prototype | Main limitation |
-| --- | --- | --- | --- |
-| Work transition planner | A worker hears that AI will change their job but cannot identify a useful next step. | Enter a role and three weekly tasks; get a reviewable task breakdown, one skill exercise, and a short action plan. | No credible prediction of redundancy or guaranteed employment outcomes. |
-| Family AI conversation kit | A parent wants practical ways to discuss AI use with a child. | Enter an age band and a fictional scenario; get discussion questions, a verification exercise, and an editable family agreement. | Use synthetic scenarios; no child profiling or collection of private conversations. |
-| Community concern mapper | A local group has many AI concerns but struggles to turn them into actionable proposals. | Paste synthetic feedback; group concerns, retain traceable excerpts, and let a facilitator edit a shortlist. | Summaries can erase minority views; retain disagreement and human review. |
-| Workplace AI policy explainer | A worker cannot understand what an existing workplace AI policy permits. | Paste a sample policy; ask a concrete question; return relevant excerpts and unanswered questions. | Explain supplied text without claiming a legal or compliance determination. |
-| AI claim checking exercise | A person mistakes a confident AI answer for verified evidence. | Show a synthetic answer beside supplied source passages; highlight unsupported claims and teach a checking step. | Requires trustworthy source material; cannot prove arbitrary claims true or detect all fabricated content. |
+| Time | Activity |
+| --- | --- |
+| 17:00 | Welcome, problem, briefs, and format. |
+| 17:30 | Teams ready, credits claimed, start building. |
+| 20:30 | Submission form closes sharply. |
+| By 21:00 | Winners and wrap-up. |
 
-## Recommended preparation
+Three hours of building; pizza, drinks, and $100 API credits each. Up to five team members. Internal target: submit by 20:25. The deck gives no separate demo duration; our earlier 20:00 assumption is superseded.
 
-Prepare examples for the work planner and community mapper, but choose the actual product only after seeing the brief. Both can show a useful transformation in a few minutes without requiring partner access or a large data source. A work planner is a good default only if an official brief concerns workers' uncertainty or practical adaptation.
+## Credits and prize
 
-For any selected idea, write this sentence first: **For [specific user], when [concrete situation], help them [observable action] so that [useful result].** Reject ideas whose main output is generic advice with no next action.
+[Slide 12](https://claude.echofold.ai/#/12): claim $100 API credits before 17:30 using its offer link. Find your organisation ID in Claude Console, Settings, Organization. Claude.ai IDs are rejected. One claim per person/account; repeat attempts are automatically blocked and cannot be fixed on the night. Credits usually arrive within minutes. They are for API use, including Claude Code, not Claude.ai. No credits have been redeemed by this project work.
 
-Choose using problem fit, whether the core workflow can be completed in about three hours, and whether a new user could operate it after the event. These are our selection heuristics, not additional official judging categories.
+[Slide 11](https://claude.echofold.ai/#/11): winning-team prize is one month of Claude Max 20x. It advertises $200 before VAT, increased usage, Claude Code, priority access, and early features. These are deck statements, not independently verified subscription specifications. The earlier Luma listing says a month per winning member; the deck does not further clarify allocation. The form uses each member's Claude-account email for prize delivery.
 
-## Questions to resolve at check-in
+## Judging
 
-- What are the exact briefs, and is there supporting material from the September conversation?
-- Are preparation, starter code, existing libraries, and non-Claude tools permitted?
-- Is the demo deadline 20:00, and how many minutes does each team get?
-- What must be submitted, and may the source repository remain private?
-- Are there team, credit redemption, hosting, or data-use requirements beyond the public page?
+[Slide 10](https://claude.echofold.ai/#/10): the organiser describes Clawd running on Claude Opus 5.5, reading entries at closure, scoring, and selecting a top three for Kevin to check. This reports the stated setup, not independent model verification.
+
+[Slide 14](https://claude.echofold.ai/#/14):
+
+| Points | Criterion | Checks |
+| --- | --- | --- |
+| 30 | Takes on the problem | Compression burnout, clear audience, suggested direction or explained alternative. |
+| 30 | Actually works | Site opens/repo runs; real end-to-end core functionality; no fakes or mocks. |
+| 20 | Someone would use it | README onboarding; useful afterward without the team explaining it. |
+| 20 | Gives time back | Saves time/attention without adding work, alerts, or prompts; people receive savings. |
+
+The judge reads README and code or live site, plus the form description. Highest total wins. Explain real behavior and limitations; never insert instructions to manipulate evaluation.
+
+## Submission
+
+[Slide 15](https://claude.echofold.ai/#/15) and [form, slide 16](https://claude.echofold.ai/#/16):
+
+- One repo or accessible live-site link per team; closes 20:30 with no reopening promised.
+- Repository submissions must be public for judging and may be made private again afterward.
+- This repo remains private per user instruction. Reading the deck does not authorise a visibility change. Obtain explicit authorisation or use a working accessible live site.
+- Form fields: team name, project name, link, and short description of what it does and whom it gives time back to.
+- Up to five team members' names and Claude-account emails; prize delivery uses those accounts. Keep personal details out of tracked files.
+- Push final changes and verify access before submitting; verify submission acknowledgement afterward.
+- The organiser says the team retains ownership and the event does not take its code.
+
+## Remaining slides
+
+| Slides | Content |
+| --- | --- |
+| 1-2 | Event title, 29 October date, 17:00-21:00 overall window, Kevin as Claude Community Ambassador, deck access. |
+| 3 | Thanks to DCU and Joe Lanzillotta, who runs DCU:Innovate Catalyst, the student accelerator. |
+| 4 | Kevin introduces Echofold, cybersecurity/AI background, BEng/BSc, Claude Ambassador and Manus AI Fellow roles, consulting, startup and financial-services software, training, hackathons. |
+| 5 | His account of Leaving Cert grading, mobile-network optimiser/Arano, drone search-and-rescue, and Selkie maritime intelligence projects. These do not define tonight's brief. |
+| 6 | Solve one concrete community problem; make the result usable afterward. |
+| 17 | [Articles](https://kevin.echofold.ai/articles), [events](https://kevin.echofold.ai/events), [LinkedIn](https://www.linkedin.com/in/kevincollinsirl/). |
+
+## Open decisions
+
+Product, user, stack, integrations, and scope are undecided. Rules on prebuilt code and tools beyond Claude Code remain unconfirmed. No separate demo duration is specified. User must decide on public repo access versus live-site submission before publishing/submitting.
+
+ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments. No application or shutdown integration has been built as part of that installation.
