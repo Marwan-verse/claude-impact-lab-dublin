@@ -68,18 +68,21 @@ Restore: select experiment → verify manifest → choose new destination → re
 
 Exclude `.env` files, dependencies, and build output by default; make exclusions visible. Keep credentials outside the snapshot and repository. Treat paths and project contents as untrusted data. Prevent paths or symlinks from escaping the selected roots, and reject an existing restore destination rather than overwriting it. Never claim arbitrary agents were stopped or a full environment reproduced.
 
-## API contract to agree before implementation
+## API contract
 
 | Endpoint | Purpose |
 | --- | --- |
 | `POST /api/inspect` | Inspect a project and return capture options. |
-| `POST /api/vaults` | Create a snapshot and handover. |
+| `POST /api/handover/preview` | Prepare the exact outbound context for review. |
+| `POST /api/handover/generate` | Generate a handover after review. |
+| `POST /api/vaults` | Create a snapshot and handover through the direct API. |
 | `GET /api/vaults` | List experiments. |
 | `GET /api/vaults/:id` | Read a saved experiment. |
+| `PATCH /api/vaults/:id` | Save edits to a handover. |
 | `POST /api/vaults/:id/verify` | Check snapshot integrity. |
 | `POST /api/vaults/:id/restore` | Restore to a new destination. |
 
-Agree response fields, errors, and what context is sent to Claude before parallel implementation. These endpoints are a proposed contract, not implemented functionality.
+The local backend implements these endpoints; see `docs/backend-api.md` for the request and response fields, consent requirements, limitations, and verification status. Frontend integration is being checked separately. Live Claude access is not yet verified.
 
 ## Two-person work split
 

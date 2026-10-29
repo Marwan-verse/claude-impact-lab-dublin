@@ -62,4 +62,4 @@ These are team targets, not organiser rules. Reduce scope if starting late.
 
 ## Status
 
-The Unfinished Work Vault has been selected and planned. No app, dependencies, or run commands exist yet. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
+The Unfinished Work Vault has a local Node backend and automated tests; the planned user interface is not yet implemented. See `docs/backend-api.md` for the API contract, setup, verification status, and limitations. Live Claude integration still requires verification with an authorised API key. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
