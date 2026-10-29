@@ -22,3 +22,7 @@
 .card-status{font-size:11px;color:#b8d3b8;margin-top:8px}
 .card-status.needs-review{color:#e0c394}
 main h1:focus{outline:none}
+.preview-block{border-top:1px solid #435a4b;margin-top:22px;padding-top:22px}
+.preview-block h3{color:#eef0e3;font-size:14px;margin:0 0 8px}
+.form label.confirm-context{display:flex;align-items:flex-start;gap:10px;line-height:1.6;font-weight:500;margin:14px 0 18px}
+.confirm-context input{width:auto;flex:none;margin:3px 0 0;accent-color:#c5d8bc}
