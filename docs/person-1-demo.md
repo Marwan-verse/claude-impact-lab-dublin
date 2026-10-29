@@ -24,4 +24,4 @@ If the backend or Claude service is unavailable, show the actual unavailable sta
 
 ## Frontend fixture check
 
-The capture, exact context preview, confirmation, generated draft, and saved-work screens were exercised against a temporary local HTTP fixture. The fixture supplied synthetic responses and did not inspect or restore files or call Claude. It was removed after the test. Repeat the entire walkthrough against Person 2's real service before presenting the workflow as working end to end.
+The capture, exact context preview, confirmation, and generated draft screens were exercised against a temporary local HTTP fixture. The unsaved-draft dialog was checked for both keeping the edited draft and confirming discard. The fixture supplied synthetic responses and did not inspect or restore files or call Claude. It was removed after the test. Repeat the entire walkthrough against Person 2's real service before presenting the workflow as working end to end.
