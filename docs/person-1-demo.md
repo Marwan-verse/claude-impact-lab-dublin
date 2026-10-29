@@ -21,3 +21,7 @@ If the backend or Claude service is unavailable, show the actual unavailable sta
 - Check that the user sees the context supplied to Claude before submission and can distinguish checked state from AI output.
 - Verify all visible actions against the agreed backend contract and actual integration.
 - Ensure the README describes current setup, dependencies, limitations, and user-facing behavior without promising unimplemented functions.
+
+## Frontend fixture check
+
+The capture, notes, handover, verify, and restore screens were exercised against a temporary local HTTP fixture. The fixture supplied synthetic responses and did not inspect or restore files or call Claude. It was removed after the test. Repeat the walkthrough against Person 2's real service before presenting the workflow as working end to end.
