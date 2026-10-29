@@ -6,8 +6,8 @@ The interface supports the planned local Git project capture, handover, snapshot
 
 1. Start the local backend and frontend using their documented commands.
 2. Open a real Git project containing unfinished changes. Choose **Put work away** and enter its local path.
-3. Inspect the project. Review the returned Git state, exclusions, and context to be sent to Claude. Enter the goal, issue, and next step.
-4. Create the vault and inspect the actual handover. Explain which information is user-provided, checked, and generated.
+3. Inspect the project. Review the returned Git state and exclusions. Enter the goal, issue, and next step.
+4. Prepare and review the exact context preview, confirm it, generate an editable handover, and save. Explain which information is user-provided, checked, and generated.
 5. Open the saved experiment, check snapshot integrity, and restore into a new, empty destination.
 6. Compare restored files against the original. Explain that verified snapshot integrity is not proof that dependencies, secrets, cloud services, or the application itself have been restored.
 
@@ -24,4 +24,4 @@ If the backend or Claude service is unavailable, show the actual unavailable sta
 
 ## Frontend fixture check
 
-The capture, notes, handover, verify, and restore screens were exercised against a temporary local HTTP fixture. The fixture supplied synthetic responses and did not inspect or restore files or call Claude. It was removed after the test. Repeat the walkthrough against Person 2's real service before presenting the workflow as working end to end.
+The capture, exact context preview, confirmation, generated draft, and saved-work screens were exercised against a temporary local HTTP fixture. The fixture supplied synthetic responses and did not inspect or restore files or call Claude. It was removed after the test. Repeat the entire walkthrough against Person 2's real service before presenting the workflow as working end to end.
