@@ -40,6 +40,6 @@ One GitHub repo or accessible live-site link per team. Repo submissions must be 
 
 ## Development status
 
-The `person-1` branch contains the React/Vite interface for **The Unfinished Work Vault**. It calls the proposed local service but does not implement snapshot capture, Claude, verification, or restoration; those are Person 2's work. Handover edits currently last only while the view is open.
+The `person-1` branch contains the React/Vite interface for **The Unfinished Work Vault**. It calls the proposed local service but does not implement snapshot capture, Claude, verification, or restoration; those are Person 2's work. Generated handovers are editable before initial save; saved handovers are read-only until the backend supports updates.
 
 To run the frontend, install Node.js and run `npm install`, then `npm run dev`. Open the local URL printed by Vite. `npm run build` checks the production bundle. Development requests under `/api` proxy to a local service on port 3001; without that service, the interface displays an unavailable message. See [the proposed API contract](docs/frontend-api-contract.md) and [demo instructions](docs/person-1-demo.md).
