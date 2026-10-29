@@ -62,4 +62,10 @@ These are team targets, not organiser rules. Reduce scope if starting late.
 
 ## Status
 
-The Unfinished Work Vault has an integrated React/Vite interface, a local Node backend and 76 passing automated tests. See `docs/backend-api.md` for the API contract, setup, verification status, and limitations. Live TensorX generation has been verified through the API; live Anthropic has not. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
+The dashboard discovers recent local Git projects from Codex and Claude Code session metadata. Discovery is separate from saving a vault or sending context to a provider. See `docs/project-discovery.md` and the reusable `skills/unfinished-work-vault/SKILL.md`.
+
+The Unfinished Work Vault has an integrated React/Vite interface, a local Node backend and automated tests. See `docs/backend-api.md` for the API contract, setup, verification status, and limitations. Live TensorX generation has been verified through the API; live Anthropic has not. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
+
+The review flow supports local handovers, agent-draft import, individual file exclusions, stopping and quality checks. Saved snapshots can be searched, grouped, compared, checked for recovery readiness, exported as a local handoff folder, and resumed with a copyable agent prompt. Explicitly supplied process IDs can be checked for existence, but process identity, discovery and automatic stopping are not supported. See README for limits and `docs/backend-api.md` for contracts.
+
+The project now has work-in-progress/done/abandoned statuses, a per-project reviewed end-of-day queue, recovery workspace and checklists, snapshot timeline comparison, decision journal and context links, plus local handoff package review and handback notes. No project command is automatically executed and no handoff is automatically shared. Read README and the API guide for the exact trust and persistence boundaries.

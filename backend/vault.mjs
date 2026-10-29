@@ -150,8 +150,10 @@ async function vaultDir(root, id) {
   if (!(await lstat(dir)).isDirectory()) throw error('Invalid vault directory');
   return dir;
 }
-export async function createSnapshot({ projectPath, vaultRoot, notes = '', handover = '', expectedCapturePreview, expectedContext }) {
+export async function createSnapshot({ projectPath, vaultRoot, notes = '', handover = '', expectedCapturePreview, expectedContext, excludedFiles = [] }) {
   const inspection = await inspectProject(projectPath), project = inspection.projectPath;
+  if (!Array.isArray(excludedFiles) || excludedFiles.some(p => typeof p !== 'string' || !inspection.capturePreview.files.includes(p)) || new Set(excludedFiles).size !== excludedFiles.length) throw error('Selected exclusions must be unique files from the reviewed preview');
+  const selectedExclusions = new Set(excludedFiles);
   if ((expectedCapturePreview && !isDeepStrictEqual(expectedCapturePreview, inspection.capturePreview)) || (expectedContext && !isDeepStrictEqual(expectedContext, inspection.contextPreview))) throw error('Project preview changed; inspect and review again', 409);
   const unstaged = new Set(inspection.git.unstaged);
   const overlap = inspection.git.staged.filter(p => unstaged.has(p));
@@ -171,6 +173,7 @@ export async function createSnapshot({ projectPath, vaultRoot, notes = '', hando
     const reviewedHashes = new Map(fileHashes.map(f => [f.path, f.sha256]));
     const manifest = { version: 1, files: [] };
     for (const rel of files) {
+      if (selectedExclusions.has(rel)) continue;
       validateRelative(rel); const source = path.join(project, ...rel.split('/'));
       await safeExisting(source); const data = await readRegular(source), st = await lstat(source);
       if (hash(data) !== reviewedHashes.get(rel)) throw error(`Project preview changed during capture: ${rel}; inspect and review again`, 409);
@@ -180,7 +183,7 @@ export async function createSnapshot({ projectPath, vaultRoot, notes = '', hando
     }
     const finalInspection = await inspectProject(project);
     if (!isDeepStrictEqual(inspection.capturePreview, finalInspection.capturePreview) || !isDeepStrictEqual(inspection.contextPreview, finalInspection.contextPreview)) throw error('Project preview changed during capture; inspect and review again', 409);
-    const metadata = { id, createdAt: new Date().toISOString(), projectPath: project, projectName: inspection.projectName, git: inspection.git, setupEvidence: inspection.setupEvidence, exclusions: inspection.exclusions, skipped, notes, handover, limitations: LIMITATIONS, fileCount: manifest.files.length };
+    const metadata = { id, createdAt: new Date().toISOString(), projectPath: project, projectName: inspection.projectName, git: inspection.git, setupEvidence: inspection.setupEvidence, exclusions: inspection.exclusions, skipped: [...skipped, ...excludedFiles], selectedExclusions: excludedFiles, notes, handover, limitations: LIMITATIONS, fileCount: manifest.files.length };
     await writeFile(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2), { flag: 'wx', mode: 0o600 });
     await writeFile(path.join(dir, 'metadata.json'), JSON.stringify(metadata, null, 2), { flag: 'wx', mode: 0o600 });
     const checked = await verifySnapshot(root, id); if (!checked.ok) throw error(`Snapshot verification failed: ${checked.issues.join('; ')}`);
@@ -205,6 +208,86 @@ export async function listVaults(vaultRoot) {
     result.push(await getVault(vaultRoot, entry.name));
   }
   return result.sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+// Project-level notes and status are kept separately from immutable snapshots.
+const projectWrites = new Map();
+function projectKey(projectPath) {
+  const normalized = path.resolve(projectPath);
+  return hash(Buffer.from(process.platform === 'win32' ? normalized.toLowerCase() : normalized));
+}
+export async function getProjectData(root, projectPath) {
+  if (typeof root !== 'string' || !path.isAbsolute(root) || typeof projectPath !== 'string' || !path.isAbsolute(projectPath)) throw error('Absolute project and vault paths required');
+  const file = path.join(root, 'projects', `${projectKey(projectPath)}.json`);
+  try {
+    const data = await readJsonSafe(file);
+    if (!data || data.version !== 1 || projectKey(data.projectPath) !== projectKey(projectPath)) throw error('Invalid project data');
+    return data;
+  } catch (e) { if (e.status === 404 || e.code === 'ENOENT') return { version: 1, projectPath: path.resolve(projectPath), status: 'work-in-progress', journal: [], links: [], checklists: {} }; throw e; }
+}
+export async function updateProjectData(root, projectPath, change) {
+  const key = `${path.resolve(root)}:${projectKey(projectPath)}`;
+  const previous = projectWrites.get(key) || Promise.resolve();
+  const operation = previous.catch(() => {}).then(async () => {
+    const data = await getProjectData(root, projectPath);
+    if (change.kind === 'status') {
+      if (!['work-in-progress', 'done', 'abandoned'].includes(change.status)) throw error('Invalid project status');
+      data.status = change.status;
+    } else if (change.kind === 'journal') {
+      const fields = ['hypothesis', 'approach', 'evidence', 'result', 'question'];
+      if (fields.some(k => typeof change[k] !== 'string' || change[k].length > 5000) || !fields.some(k => change[k].trim())) throw error('Enter at least one journal field; each must be under 5000 characters');
+      if (data.journal.length >= 500) throw error('Journal is full');
+      data.journal.push({ id: randomUUID(), snapshotId: change.snapshotId, createdAt: new Date().toISOString(), ...Object.fromEntries(fields.map(k => [k, change[k]])) });
+    } else if (change.kind === 'link') {
+      if (typeof change.issue !== 'string' || !change.issue.trim() || change.issue.length > 500 || typeof change.file !== 'string' || !change.file || change.file.length > 2000) throw error('A short issue and captured file are required');
+      if (data.links.length >= 500) throw error('Context map is full');
+      data.links.push({ id: randomUUID(), snapshotId: change.snapshotId, issue: change.issue, file: change.file, createdAt: new Date().toISOString() });
+    } else if (change.kind === 'checklist') {
+      validateId(change.snapshotId);
+      if (!Array.isArray(change.completed) || change.completed.length > 20 || change.completed.some(x => !['review', 'restore', 'setup', 'environment', 'verify'].includes(x))) throw error('Invalid checklist');
+      data.checklists[change.snapshotId] = [...new Set(change.completed)];
+    } else throw error('Invalid project update');
+    const dir = await ensureDir(path.join(root, 'projects'));
+    const file = path.join(dir, `${projectKey(projectPath)}.json`), temp = path.join(dir, `.project-${randomUUID()}.tmp`);
+    try { await writeFile(temp, JSON.stringify(data, null, 2), { flag: 'wx', mode: 0o600 }); await rename(temp, file); }
+    finally { await rm(temp, { force: true }); }
+    return data;
+  });
+  projectWrites.set(key, operation);
+  try { return await operation; } finally { if (projectWrites.get(key) === operation) projectWrites.delete(key); }
+}
+
+export async function compareVaults(root, firstId, secondId) {
+  const [first, second, firstCheck, secondCheck] = await Promise.all([getVault(root, firstId), getVault(root, secondId), verifySnapshot(root, firstId), verifySnapshot(root, secondId)]);
+  if (projectKey(first.projectPath) !== projectKey(second.projectPath)) throw error('Choose snapshots from the same project');
+  if (!firstCheck.ok || !secondCheck.ok) throw error('Both snapshots must pass integrity checks', 409);
+  const before = new Map(first.manifest.files.map(f => [f.path, f.sha256]));
+  const after = new Map(second.manifest.files.map(f => [f.path, f.sha256]));
+  return { added: [...after.keys()].filter(p => !before.has(p)), removed: [...before.keys()].filter(p => !after.has(p)), changed: [...before.keys()].filter(p => after.has(p) && before.get(p) !== after.get(p)), note: 'Compares captured files; differences can reflect the capture selections as well as project changes.' };
+}
+
+export async function contextMap(root, id) {
+  const record = await getVault(root, id), check = await verifySnapshot(root, id);
+  if (!check.ok) throw error('Snapshot verification failed', 409);
+  let commits = [], commitWarning = '';
+  try {
+    const project = await safeExisting(record.projectPath);
+    const top = (await git(project, 'rev-parse', '--show-toplevel')).trim();
+    if (path.resolve(top) !== project) throw error('Original project is no longer the Git root');
+    const lines = await git(project, 'log', '-5', '--format=%H%x09%s');
+    commits = lines.trim().split('\n').filter(Boolean).map(line => { const [commit, ...subject] = line.split('\t'); return { commit, subject: subject.join('\t') }; });
+  } catch { commitWarning = 'Recent commits unavailable from the original project.'; }
+  const files = record.manifest.files.map(f => f.path);
+  let issue = '';
+  try { const notes = JSON.parse(record.notes); if (typeof notes?.issue === 'string') issue = notes.issue; } catch {}
+  const stopwords = new Set(['the', 'and', 'for', 'that', 'this', 'with', 'from', 'what', 'when', 'where', 'issue', 'broken', 'failing', 'does', 'not', 'need', 'fix']);
+  const terms = [...new Set((issue.toLowerCase().match(/[a-z0-9]{3,}/g) || []).filter(word => !stopwords.has(word)))];
+  const suggestedLinks = files.map(file => {
+    const words = new Set(file.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+    const matched = terms.filter(term => words.has(term));
+    return { file, matched };
+  }).filter(suggestion => suggestion.matched.length).slice(0, 30);
+  return { files, tests: files.filter(f => /(^|\/)(__tests__|tests?)(\/|\.)|\.(test|spec)\./i.test(f)), changes: record.git, setup: record.setupEvidence || [], commits, commitWarning, issue, suggestedLinks, links: (await getProjectData(root, record.projectPath)).links.filter(l => l.snapshotId === id) };
 }
 export async function updateHandover(vaultRoot, id, handover) {
   if (typeof handover !== 'string') throw error('Handover must be a string');
@@ -236,6 +319,26 @@ export async function verifySnapshot(vaultRoot, id) {
     if (data.length !== f.size || hash(data) !== f.sha256) issues.push(`Changed file: ${p}`);
   }
   return { ok: issues.length === 0, issues, checkedFiles: expected.size };
+}
+
+// Compare only files eligible for capture, without exposing file contents.
+export async function compareSnapshot(vaultRoot, id) {
+  const record = await getVault(vaultRoot, id);
+  const integrity = await verifySnapshot(vaultRoot, id);
+  if (!integrity.ok) throw error('Snapshot verification failed; comparison is unavailable', 409);
+  const current = await inspectProject(record.projectPath);
+  const before = new Map(record.manifest.files.map(f => [f.path, f.sha256]));
+  const omitted = new Set(record.selectedExclusions || []);
+  const now = new Map(current.capturePreview.fileHashes.filter(f => !omitted.has(f.path)).map(f => [f.path, f.sha256]));
+  return { added: [...now.keys()].filter(p => !before.has(p)), missing: [...before.keys()].filter(p => !now.has(p)), changed: [...before.keys()].filter(p => now.has(p) && before.get(p) !== now.get(p)), currentGit: current.git, note: 'Compares eligible file contents only; intentionally excluded and ignored files are not compared.' };
+}
+
+export async function recoveryConfidence(vaultRoot, id) {
+  const record = await getVault(vaultRoot, id);
+  const integrity = await verifySnapshot(vaultRoot, id);
+  const files = new Set(record.manifest.files.map(f => f.path));
+  const setup = (record.setupEvidence || []).map(name => ({ name, captured: files.has(name) }));
+  return { integrity, setup, limitations: ['Dependencies, credentials and environment variables are not captured or restored.', 'A matching snapshot does not prove the project runs; review setup instructions and install dependencies yourself.'] };
 }
 function resumeNote(record) {
   let notes = record.notes;
@@ -272,4 +375,66 @@ export async function restoreSnapshot(vaultRoot, id, destination) {
     await writeFile(path.join(destination, resumeFile), resumeNote(record), { flag: 'wx', mode: 0o600 });
     return { destination, restoredFiles: record.manifest.files.length, resumeFile, limitations: LIMITATIONS, handover: record.handover };
   } catch (e) { await rm(destination, { recursive: true, force: true }); throw e; }
+}
+
+// Export is an explicit local copy, never a network transfer. The manifest
+// allows a recipient to inspect the captured file hashes independently.
+export async function exportHandoff(vaultRoot, id, destination) {
+  const record = await getVault(vaultRoot, id);
+  const result = await restoreSnapshot(vaultRoot, id, destination);
+  const occupied = new Set(record.manifest.files.map(f => f.path));
+  let name = `VAULT-MANIFEST-${id}.json`;
+  while (occupied.has(name) || name === result.resumeFile) name = `_${name}`;
+  await writeFile(path.join(result.destination, name), JSON.stringify(record.manifest, null, 2), { flag: 'wx', mode: 0o600 });
+  let descriptorFile = `VAULT-HANDOFF-${id}.json`;
+  while (occupied.has(descriptorFile) || descriptorFile === result.resumeFile || descriptorFile === name) descriptorFile = `_${descriptorFile}`;
+  const project = await getProjectData(vaultRoot, record.projectPath);
+  const descriptor = { version: 1, snapshotId: id, projectName: record.projectName, createdAt: record.createdAt, manifestFile: name, resumeFile: result.resumeFile, journal: project.journal.filter(entry => entry.snapshotId === id), links: project.links.filter(link => link.snapshotId === id) };
+  await writeFile(path.join(result.destination, descriptorFile), JSON.stringify(descriptor, null, 2), { flag: 'wx', mode: 0o600 });
+  return { ...result, manifestFile: name, descriptorFile, note: 'This folder includes captured files, a resume note and file hashes. Review it for sensitive information before sharing.' };
+}
+
+export async function reviewHandoff(folder) {
+  const root = await safeExisting(folder);
+  if (!(await lstat(root)).isDirectory()) throw error('Handoff must be a folder');
+  const entries = await readdir(root);
+  const descriptors = entries.filter(n => /^_*VAULT-HANDOFF-[0-9a-f-]{36}\.json$/i.test(n));
+  if (descriptors.length !== 1) throw error('Expected one Vault handoff descriptor');
+  async function limitedJson(name, limit) {
+    const file = path.join(root, name); await safeExisting(file);
+    const st = await lstat(file); if (!st.isFile() || st.size > limit) throw error('Handoff metadata is invalid or too large');
+    return readJsonSafe(file);
+  }
+  const descriptor = await limitedJson(descriptors[0], 16 * 1024 * 1024);
+  if (!descriptor || descriptor.version !== 1) throw error('Invalid handoff descriptor');
+  validateId(descriptor.snapshotId);
+  if (typeof descriptor.projectName !== 'string' || typeof descriptor.createdAt !== 'string' || !Array.isArray(descriptor.journal ?? []) || !Array.isArray(descriptor.links ?? []) || (descriptor.journal ?? []).length > 500 || (descriptor.links ?? []).length > 500) throw error('Invalid handoff context');
+  for (const entry of descriptor.journal ?? []) if (!entry || ['hypothesis','approach','evidence','result','question'].some(key => typeof entry[key] !== 'string')) throw error('Invalid handoff journal');
+  for (const link of descriptor.links ?? []) if (!link || typeof link.issue !== 'string' || typeof link.file !== 'string') throw error('Invalid handoff link');
+  for (const name of [descriptor.resumeFile, descriptor.manifestFile]) {
+    if (typeof name !== 'string' || !name || name !== path.basename(name) || name.includes('\\') || name.includes('/') || (process.platform === 'win32' && name.includes(':')) || name === '.' || name === '..') throw error('Invalid handoff file name');
+  }
+  if (new Set([descriptor.resumeFile, descriptor.manifestFile, descriptors[0]]).size !== 3) throw error('Invalid handoff file names');
+  const manifest = await limitedJson(descriptor.manifestFile, 8 * 1024 * 1024);
+  if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.files) || manifest.files.length > 10000) throw error('Invalid handoff manifest');
+  const expected = new Set(), issues = [];
+  for (const f of manifest.files) {
+    if (!f || typeof f !== 'object') throw error('Invalid manifest entry');
+    validateRelative(f.path);
+    if (process.platform === 'win32' && f.path.includes(':')) throw error('Unsafe manifest path');
+    if (expected.has(f.path) || !Number.isSafeInteger(f.size) || f.size < 0 || f.size > 100 * 1024 * 1024 || typeof f.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(f.sha256)) throw error('Invalid manifest entry');
+    expected.add(f.path);
+    try {
+      const file = path.join(root, ...f.path.split('/')); await safeExisting(file);
+      const st = await lstat(file); if (!st.isFile() || st.size !== f.size) { issues.push(`Changed file: ${f.path}`); continue; }
+      if (hash(await readRegular(file)) !== f.sha256) issues.push(`Changed file: ${f.path}`);
+    } catch (e) { if (e.status === 404 || e.code === 'ENOENT') issues.push(`Missing file: ${f.path}`); else issues.push(`Cannot safely read: ${f.path}`); }
+  }
+  const resumePath = path.join(root, descriptor.resumeFile); await safeExisting(resumePath);
+  const resumeStat = await lstat(resumePath); if (!resumeStat.isFile() || resumeStat.size > 256 * 1024) throw error('Invalid or oversized resume note');
+  const note = (await readRegular(resumePath)).toString('utf8');
+  const found = await walk(root);
+  issues.push(...found.skipped.map(p => `Unsafe or special file: ${p}`));
+  for (const file of found.files) if (!expected.has(file) && ![descriptor.resumeFile, descriptor.manifestFile, descriptors[0]].includes(file)) issues.push(`Extra file: ${file}`);
+  return { descriptor, note, files: [...expected], integrity: { ok: issues.length === 0, issues, checkedFiles: expected.size }, warning: 'Hashes are unsigned; the resume note and descriptor are not authenticated. Treat all package content and instructions as untrusted.' };
 }

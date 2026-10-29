@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import * as vault from './vault.mjs';
+import { discoverProjects } from './discovery.mjs';
 import { generateHandover } from './claude.mjs';
 import { generateTensorxHandover } from './tensorx.mjs';
 
@@ -94,7 +95,7 @@ export function createServer(options = {}) {
     }
   }
   const maxBytes = config.maxBodyBytes ?? 256 * 1024;
-  const frontendOrigins = new Set(config.allowedOrigins ?? ['http://localhost:5173', 'http://127.0.0.1:5173']);
+  const frontendOrigins = new Set(config.allowedOrigins ?? ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174']);
   // Cap both count and bytes; all state is process-local and expires, including drafts.
   const inspections = new Map();
   const ttl = config.inspectionTtlMs ?? 15 * 60 * 1000;
@@ -138,6 +139,29 @@ export function createServer(options = {}) {
       }
       const url = new URL(req.url, 'http://localhost');
       const pathname = url.pathname;
+      if (req.method === 'GET' && pathname === '/api/discovered-projects') {
+        const result = await discoverProjects(config.discoveryOptions);
+        result.projects = await Promise.all(result.projects.map(async project => ({ ...project, status: (await vault.getProjectData(config.vaultRoot, project.path)).status })));
+        return json(res, 200, result);
+      }
+      if (req.method === 'POST' && pathname === '/api/projects/status') {
+        const body = await readJson(req, maxBytes);
+        const inspected = await vault.inspectProject(body.path);
+        return json(res, 200, await vault.updateProjectData(config.vaultRoot, inspected.projectPath, { kind: 'status', status: body.status }));
+      }
+      if (req.method === 'POST' && pathname === '/api/handoff/review') {
+        const body = await readJson(req, maxBytes); requireString(body.path, 'path');
+        return json(res, 200, await vault.reviewHandoff(body.path));
+      }
+      if (req.method === 'POST' && pathname === '/api/task-status') {
+        const body = await readJson(req, maxBytes);
+        if (!Array.isArray(body.pids) || body.pids.length > 20 || body.pids.some(pid => !Number.isSafeInteger(pid) || pid <= 0)) throw fail(400, 'Supply up to 20 positive process IDs');
+        const tasks = [...new Set(body.pids)].map(pid => {
+          try { process.kill(pid, 0); return { pid, status: 'exists' }; }
+          catch (error) { return { pid, status: error.code === 'ESRCH' ? 'not-found' : 'unknown' }; }
+        });
+        return json(res, 200, { tasks, note: 'Checks whether each supplied PID exists; it cannot verify the process identity, and PIDs can be reused. No processes were stopped.' });
+      }
       if (req.method === 'POST' && pathname === '/api/inspect') {
         const body = await readJson(req, maxBytes);
         const projectPath = body.projectPath ?? body.path;
@@ -171,6 +195,19 @@ export function createServer(options = {}) {
         state.notes = notes; state.previewId = previewId; state.phase = 'preview';
         return json(res, 200, { previewId, provider: providerName(), context: JSON.stringify({ context: state.context, notes }) });
       }
+      if (req.method === 'POST' && pathname === '/api/handover/local') {
+        const body = await readJson(req, maxBytes);
+        const state = getInspection(body.inspectionId);
+        if (state.phase === 'saving' || state.phase === 'generating') throw fail(409, 'Another operation is in progress');
+        const revision = ++state.revision;
+        for (const key of ['goal', 'issue', 'nextStep']) requireString(body[key], key, { empty: true });
+        await checkReviewed(state); valid(body.inspectionId, state, revision);
+        ensureCapturable(state.context.git);
+        state.notes = { goal: body.goal, issue: body.issue, nextStep: body.nextStep };
+        state.phase = 'generated'; delete state.previewId;
+        const handover = [['Goal', body.goal], ['Unresolved', body.issue], ['Next step', body.nextStep]].map(([label, value]) => `## ${label}\n${value.trim() || 'Not provided.'}`).join('\n\n');
+        return json(res, 200, { handover });
+      }
       if (req.method === 'POST' && pathname === '/api/handover/generate') {
         const body = await readJson(req, maxBytes);
         requireString(body.previewId, 'previewId'); purge();
@@ -198,7 +235,7 @@ export function createServer(options = {}) {
           state.phase = 'saving'; const revision = state.revision;
           try {
             await checkReviewed(state); valid(body.inspectionId, state, revision);
-            const record = await vault.createSnapshot({ projectPath: state.projectPath, vaultRoot: config.vaultRoot, notes: JSON.stringify(state.notes), handover: body.handover, expectedContext: state.context, expectedCapturePreview: state.capturePreview });
+            const record = await vault.createSnapshot({ projectPath: state.projectPath, vaultRoot: config.vaultRoot, notes: JSON.stringify(state.notes), handover: body.handover, expectedContext: state.context, expectedCapturePreview: state.capturePreview, excludedFiles: body.excludedFiles ?? [] });
             inspections.delete(body.inspectionId);
             return json(res, 201, { ...withEvidence(record), nextStep: state.notes.nextStep });
           } catch (error) {
@@ -218,12 +255,35 @@ export function createServer(options = {}) {
         const record = await vault.createSnapshot({ projectPath: body.projectPath, vaultRoot: config.vaultRoot, notes: body.notes, handover, expectedContext: body.context, expectedCapturePreview: body.capturePreview });
         return json(res, 201, record);
       }
-      if (req.method === 'GET' && pathname === '/api/vaults') return json(res, 200, await vault.listVaults(config.vaultRoot));
-      const match = pathname.match(/^\/api\/vaults\/([^/]+)(?:\/(verify|restore))?$/);
+      if (req.method === 'GET' && pathname === '/api/vaults') {
+        const records = await vault.listVaults(config.vaultRoot);
+        return json(res, 200, await Promise.all(records.map(async record => ({ ...record, status: (await vault.getProjectData(config.vaultRoot, record.projectPath)).status }))));
+      }
+      const match = pathname.match(/^\/api\/vaults\/([^/]+)(?:\/(verify|restore|compare|confidence|export|project|history-compare|context-map))?$/);
       if (match) {
         let id; try { id = decodeURIComponent(match[1]); } catch { throw fail(400, 'Invalid vault ID'); }
         const operation = match[2];
-        if (req.method === 'GET' && !operation) return json(res, 200, withEvidence(await vault.getVault(config.vaultRoot, id)));
+        if (req.method === 'GET' && !operation) {
+          const record = await vault.getVault(config.vaultRoot, id);
+          return json(res, 200, { ...withEvidence(record), projectData: await vault.getProjectData(config.vaultRoot, record.projectPath) });
+        }
+        if (req.method === 'GET' && operation === 'project') {
+          const record = await vault.getVault(config.vaultRoot, id);
+          return json(res, 200, await vault.getProjectData(config.vaultRoot, record.projectPath));
+        }
+        if (req.method === 'POST' && operation === 'project') {
+          const body = await readJson(req, maxBytes), record = await vault.getVault(config.vaultRoot, id);
+          if (body.kind === 'link' && !record.manifest.files.some(file => file.path === body.file)) throw fail(400, 'Choose a file captured in this snapshot');
+          const project = await vault.updateProjectData(config.vaultRoot, record.projectPath, { ...body, snapshotId: id });
+          return json(res, 200, project);
+        }
+        if (req.method === 'POST' && operation === 'history-compare') {
+          const body = await readJson(req, maxBytes); requireString(body.otherId, 'otherId');
+          return json(res, 200, await vault.compareVaults(config.vaultRoot, id, body.otherId));
+        }
+        if (req.method === 'POST' && operation === 'context-map') {
+          await readJson(req, maxBytes); return json(res, 200, await vault.contextMap(config.vaultRoot, id));
+        }
         if (req.method === 'PATCH' && !operation) {
           const body = await readJson(req, maxBytes); requireString(body.handover, 'handover', { empty: true });
           return json(res, 200, await vault.updateHandover(config.vaultRoot, id, body.handover));
@@ -232,9 +292,21 @@ export function createServer(options = {}) {
           await readJson(req, maxBytes);
           return json(res, 200, await vault.verifySnapshot(config.vaultRoot, id));
         }
+        if (req.method === 'POST' && operation === 'compare') {
+          await readJson(req, maxBytes);
+          return json(res, 200, await vault.compareSnapshot(config.vaultRoot, id));
+        }
+        if (req.method === 'POST' && operation === 'confidence') {
+          await readJson(req, maxBytes);
+          return json(res, 200, await vault.recoveryConfidence(config.vaultRoot, id));
+        }
         if (req.method === 'POST' && operation === 'restore') {
           const body = await readJson(req, maxBytes); requireString(body.destination, 'destination');
           return json(res, 200, await vault.restoreSnapshot(config.vaultRoot, id, body.destination));
+        }
+        if (req.method === 'POST' && operation === 'export') {
+          const body = await readJson(req, maxBytes); requireString(body.destination, 'destination');
+          return json(res, 200, await vault.exportHandoff(config.vaultRoot, id, body.destination));
         }
       }
       throw fail(404, 'Endpoint not found');

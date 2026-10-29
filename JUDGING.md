@@ -4,7 +4,7 @@ A factual map of what The Unfinished Work Vault does, how to check it quickly, a
 
 ## In one paragraph
 
-**Who:** developers who use AI coding agents. **Problem (compression burnout):** agents make each task faster, so people start more of them. The day ends with several half-finished changes whose context lives only in their head, so stopping feels risky and the evening goes on "just finishing" or keeping it all in mind. **What the Vault does:** in about a minute, it inspects a local Git project, writes a short AI handover that keeps your notes, observed evidence and model inference separate, and copies the working files into a local, integrity-hashed vault. Later you read the handover, verify the snapshot and restore it to a new folder. **Time returned:** the evening, because nothing has to be finished or remembered before stopping, and the restart, because the handover replaces reconstructing context from memory. It adds no notifications, streaks or check-ins.
+**Who:** developers who use AI coding agents. **Problem (compression burnout):** agents make each task faster, so people start more of them. The day ends with several half-finished changes whose context lives only in their head, so stopping feels risky and the evening goes on "just finishing" or keeping it all in mind. **What the Vault does:** in about a minute, it inspects a local Git project, prepares a local handover from your notes or an optional AI handover, and copies the working files into a local, integrity-hashed vault. Later you read the handover, verify the snapshot and restore it to a new folder. **Time returned:** the evening, because nothing has to be finished or remembered before stopping, and the restart, because the handover replaces reconstructing context from memory. It adds no notifications, streaks or check-ins.
 
 **Brief direction:** the deck's *shutdown command* direction, combined with an *understanding check* before resuming. The Vault does not pause agents; it makes stopping safe.
 
@@ -14,14 +14,16 @@ Requires Node.js 20+, npm and Git.
 
 ```sh
 npm ci
-npm --prefix backend test          # 76 tests; real Git and filesystem, no API key needed
+npm --prefix backend test          # real Git and filesystem, no API key needed
 npm run build
 sh scripts/make-demo-project.sh    # prints the path of a new half-finished Git project
 ```
 
-Then start the backend with a model key (see [README: Run the app](README.md#run-the-app)) and run `npm run dev`. In the browser: paste the printed path → **What we found** shows the files to capture and what is skipped (`.env`, `.git`) → answer up to three optional notes → review the exact context that will be sent → generate and edit the handover → save → open it → **Check recovery** → **Restore to new folder**.
+Start the backend and frontend using [README: Run the app](README.md#run-the-app). In the browser: paste the printed path → review eligible files and exclusions → enter notes → choose **Use notes as a local handover** → review and save → check recovery → restore to a new folder. This path requires no API key. AI generation is optional and requires the user to review and consent to the exact provider context.
 
 Without a key, the test suite still exercises inspection, capture, hashing, verification and restore on real temporary Git repositories. Only the model's HTTP call is stubbed.
+
+The home screen also offers **Close my day**, which queues selected projects for individual review. Saved projects have shared status, a recovery checklist, timeline comparison, decision journal and context map. A handoff room reviews local export folders; manifest hashes are unsigned and package instructions remain untrusted.
 
 ## Evidence by criterion
 
@@ -45,7 +47,7 @@ Without a key, the test suite still exercises inspection, capture, hashing, veri
 | Restore to a new folder only, never overwriting, plus a `VAULT-RESUME.md` | `restoreSnapshot` and `resumeNote` in [`backend/vault.mjs`](backend/vault.mjs) |
 | UI wired to these endpoints | [`src/App.jsx`](src/App.jsx), [`src/Evidence.jsx`](src/Evidence.jsx) |
 
-**Automated tests (76, all passing):** [`test/`](test/). Examples: *snapshot verifies and restores actual working files while excluding secrets and dependencies*; *verification reports changes, missing and extra files and blocks restoration*; *unsafe roots and existing destinations are rejected without modifying the project*; *rejects overlapping staged and unstaged changes without losing index content*; *TensorX authentication failures are actionable without leaking the response*.
+**Automated tests:** [`test/`](test/). Examples: *snapshot verifies and restores actual working files while excluding secrets and dependencies*; *verification reports changes, missing and extra files and blocks restoration*; *unsafe roots and existing destinations are rejected without modifying the project*; *rejects overlapping staged and unstaged changes without losing index content*; *TensorX authentication failures are actionable without leaking the response*.
 
 **Live run, 29 October 2026,** with a real TensorX key and model `deepseek/deepseek-v4.1-flash`, on a project from `scripts/make-demo-project.sh`, using the same endpoint sequence as the UI:
 
@@ -77,7 +79,7 @@ original project: unchanged (git status checked after restore; also covered by t
 
 ### Gives time back (20%)
 
-- **Stopping:** the flow is one folder path plus up to three optional one-line notes; the model drafts the handover. Nothing must be committed, tidied or remembered first.
+- **Stopping:** the flow is one folder path plus up to three optional notes; a local draft can be prepared without a model call. Nothing must be committed, tidied or remembered first.
 - **Restarting:** the restored folder contains `VAULT-RESUME.md` (notes, handover, original branch and commit, and what was not restored), so the first step back is reading one file. In the app, "The short version" states goal, current changes, unresolved issue and next step, with evidence and inference labelled, so the user checks it instead of reconstructing it.
 - **No new obligations:** no notifications, reminders, streaks or productivity metrics. The time saved goes back to the person, not into more throughput.
 - We have **not measured** time saved in a study. The benefit is argued from the workflow, not from data.
@@ -88,6 +90,7 @@ original project: unchanged (git status checked after restore; also covered by t
 - Restores working files only: not Git history or staging, dependencies, environment variables, credentials or running processes. Verification checks file integrity, not that the app runs.
 - Repositories with submodules or active Git clean/process filters are rejected.
 - Tracked or unignored secrets cannot be detected automatically; the capture preview lists every file for review.
+- On Windows, some existing shell-script and filesystem-watcher tests are platform-dependent; see the test output for the current environment.
 - Live TensorX generation is verified through both the API and the browser UI (above); live Anthropic generation has not been verified.
 
 Full details: [docs/backend-api.md](docs/backend-api.md).

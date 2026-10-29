@@ -1,6 +1,24 @@
 # Backend API and local walkthrough
 
+`GET /api/discovered-projects` returns `{ projects, warnings }` for recent local Codex and Claude Code Git projects. Candidates contain `path`, `name`, `sources`, and `lastSeen`. Discovery does not capture files or initiate a model call. See [project discovery](project-discovery.md) for metadata locations, limits, and privacy.
+
 The local Node HTTP API is integrated with the React/Vite UI. It inspects a Git working tree, sends explicitly confirmed metadata and notes to the configured AI provider for a handover, snapshots permitted files locally, and verifies/restores those files. It does not stop agents or recreate a working environment. The intended benefit is less time reconstructing context when you return, not a measured time saving.
+
+## Additional local operations
+
+- `POST /api/task-status` accepts up to 20 explicitly supplied positive process IDs and checks whether they exist without stopping them. Process IDs can be reused; this does not establish process identity.
+- After inspection, `POST /api/handover/local` accepts `inspectionId`, `goal`, `issue`, and `nextStep` strings. It rechecks the reviewed project and creates an editable local handover without a provider request. `POST /api/vaults` accepts the optional `excludedFiles` array of exact paths from the reviewed capture preview. Excluded files are not recoverable from the snapshot.
+- `POST /api/vaults/:id/compare` verifies the snapshot, then compares eligible current file hashes. Missing source projects and tampered snapshots produce an error. Individually excluded files remain excluded from comparison.
+- `POST /api/vaults/:id/confidence` checks snapshot integrity and reports captured setup-file evidence; it does not check runtime functionality or credentials.
+- `POST /api/vaults/:id/export` accepts an absolute new `destination` and creates a local handoff folder with files, a resume note and SHA-256 manifest. This does not share or upload it. The folder includes potentially sensitive content and original path information.
+
+## Project workspaces and handoffs
+
+- `POST /api/projects/status` accepts a verified local Git root in `path` and `status` as `work-in-progress`, `done` or `abandoned`. Discovery and the vault list return project statuses. Status is independent of snapshots.
+- `GET /api/vaults/:id/project` returns project data. `POST /api/vaults/:id/project` updates status, appends a journal entry, adds an issue-to-captured-file link, or records checklist choices. Journal and links are associated with the selected snapshot. Updates are serialized per project in the local server and stored separately under the vault root.
+- `POST /api/vaults/:id/history-compare` with `otherId` verifies both snapshots and compares their captured files, provided both belong to the same project. Differences may arise from capture selection. `POST /api/vaults/:id/context-map` returns snapshot evidence, user links, filename-word suggestions for the saved issue, test-name candidates and recent commits if the original repository is available.
+- New exports add a handoff descriptor, including snapshot-associated journal entries and links. `POST /api/handoff/review` with an absolute `path` reviews a local handoff folder and checks files against its manifest without running commands. Extra, missing, unsafe or changed files are reported. The manifest is unsigned; descriptor and resume notes are untrusted and unauthenticated. Older exports without a descriptor must be re-exported.
+- The end-of-day queue and results are browser-session state. Every project still uses a separate inspect, review and capture; no process is stopped.
 
 ## Requirements and configuration
 
@@ -9,7 +27,7 @@ The local Node HTTP API is integrated with the React/Vite UI. It inspects a Git 
 - `HANDOVER_PROVIDER` selects `anthropic` or `tensorx`. If unset, the backend uses TensorX when only `TENSORX_API_KEY` is set, otherwise Anthropic. Anthropic generation requires `ANTHROPIC_API_KEY`; optional `ANTHROPIC_MODEL` defaults to `claude-sonnet-5-5`, and `ANTHROPIC_WORKSPACE_ID` sets the `anthropic-workspace-id` header. TensorX generation requires both `TENSORX_API_KEY` and an exact available `TENSORX_MODEL` ID. Set secrets in the server's environment, never a tracked file; other API operations do not require a key. The [README's hidden-entry steps](../README.md#optional-tensorx-provider-hidden-key-entry) show safe model discovery and startup.
 - A real generation makes a network request and may incur charges. TensorX may bill separately; do not assume the event's Anthropic credits apply. The event allows any handover model (confirmed 29 October 2026); the product is built with Claude Code and the organiser's Claude judge is unchanged.
 - Shared optional settings: `VAULT_ROOT` (default `~/.unfinished-work-vault`) and `PORT` (default `3001`; 1–65535). Relative `VAULT_ROOT` values are resolved by the server. Project, vault and destination paths must avoid symlink components; project and vault must not contain one another.
-- The server binds to `127.0.0.1` and has **no authentication**. Other local users/processes can call it. Host and browser Origin checks are not authentication; do not expose it to a network or use it on an untrusted shared machine. Allowed cross-origin browser origins are `http://localhost:5173` and `http://127.0.0.1:5173`.
+- The server binds to `127.0.0.1` and has **no authentication**. Other local users/processes can call it. Host and browser Origin checks are not authentication; do not expose it to a network or use it on an untrusted shared machine. Allowed cross-origin browser origins are `http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:5174` and `http://127.0.0.1:5174`.
 - Vite's development proxy forwards `/api` to `http://127.0.0.1:3001` regardless of `PORT`. If changing the backend port, update the proxy target as well; changing `PORT` alone only works for clients that address the backend directly.
 
 ## What is shared and stored

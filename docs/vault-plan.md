@@ -12,10 +12,10 @@ The primary user is a developer using Claude Code who needs to stop with a half-
 
 ### Put work away
 
-1. Choose a local Git project.
+1. Choose a discovered recent Codex or Claude Code Git project, or enter a local Git project manually. Discovery lists candidates; it does not archive them.
 2. Review project location, current branch and commit, changed/staged/untracked files, and snapshot exclusions.
 3. Optionally describe the goal, known issues, and the next step.
-4. Prepare and review the outbound context and selected provider, then explicitly consent to generate an editable handover. Do not send source files by default.
+4. Prepare an editable local handover, or review the outbound context and selected provider and explicitly consent before generating one. Do not send source files by default.
 5. Review the handover and save the experiment, capturing permitted project files into a local vault with a manifest.
 
 The handover separates **checked facts**, **user notes**, and **model interpretation**. It states the goal, current changes, unresolved issues, and one useful next action. Unverified statements must not appear as checked facts.
@@ -164,3 +164,7 @@ Closing: “The Vault gives you a reliable way back.” Compare time to regain c
 | Gives time back, 20% | Reduces end-of-day handover and next-session context recovery without recurring alerts. |
 
 The organiser's Claude-based judging agent reads the README and code or accessible live site plus submission description. Keep claims consistent with implemented evidence. The repository was made public by the user on 29 October 2026 for judging.
+
+## Current extensions
+
+The implemented app adds project status, a reviewed end-of-day queue, recovery checklists, comparisons between snapshots, a decision journal, a context map and local teammate handoff review. Project metadata is separate from the file snapshot. See the README for usage and limits.

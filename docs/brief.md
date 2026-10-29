@@ -1,6 +1,6 @@
 # Confirmed brief and product decision
 
-Status: **Official challenge confirmed; The Unfinished Work Vault selected and planned.**
+Status: **Official challenge confirmed; The Unfinished Work Vault implemented.**
 
 Sources read 29 October 2026: [problem](https://claude.echofold.ai/#/8), [directions](https://claude.echofold.ai/#/13), [rubric](https://claude.echofold.ai/#/14).
 
@@ -26,9 +26,9 @@ Original ideas are allowed if they explain their fit. Minimise interruption cost
 - Target user: a developer ending a Claude Code session with unfinished work.
 - Product: The Unfinished Work Vault; an original idea addressing compression burnout.
 - Problem: incomplete work and lost context make it hard to stop or restart confidently.
-- Workflow: inspect a local Git project, capture permitted files and context, create a handover, verify the snapshot, and restore to a new folder.
+- Workflow: discover a recent local Codex/Claude Code Git project or enter one manually; inspect it, capture permitted files and context, create a handover, verify the snapshot, and restore to a new folder.
 - Time back: reduce end-of-day handover and next-session context recovery without recurring alerts.
-- Integrations: local Git, local storage, and selectable Anthropic (default) or TensorX handover provider. Live access to neither provider has been verified. TensorX may bill separately; do not assume Anthropic credits apply.
+- Integrations: local Git, local storage, and selectable Anthropic (default) or TensorX handover provider. Live TensorX generation has been verified; live Anthropic access has not. TensorX may bill separately; do not assume Anthropic credits apply.
 - Stack: React/Vite interface and local Node backend. The event allows any handover model (confirmed 29 October 2026); the product is built with Claude Code and the organiser's Claude judge is unchanged.
 - Exclusions: arbitrary agent pausing, cloud/database recovery, automatic transcript capture, and team sync.
 - Verification example: save a real half-built project, check its snapshot, restore into a new folder, and compare actual files.
@@ -40,10 +40,10 @@ See [the detailed product plan](vault-plan.md) for the interface, architecture, 
 
 Product-specific acceptance criteria:
 
-- [ ] Capture a real local Git project, its state, and permitted files.
-- [ ] Generate an editable handover distinguishing evidence, user notes, and inference.
-- [ ] Verify snapshot integrity and restore files to a new folder without altering the original.
-- [ ] Clearly disclose exclusions and unverified setup; a stranger can start from the README.
+- [x] Capture a real local Git project, its state, and permitted files.
+- [x] Generate an editable handover distinguishing evidence, user notes, and inference.
+- [x] Verify snapshot integrity and restore files to a new folder without altering the original.
+- [x] Clearly disclose exclusions and unverified setup; a stranger can start from the README.
 - [ ] The final link is judge-accessible and submission succeeds before 20:30.
 
 ## Delivery
@@ -51,3 +51,5 @@ Product-specific acceptance criteria:
 **Evaluator: Claude**, through the organiser's Clawd judging agent (stated model: Claude Opus 5.5). Kevin reviews the top three. Make the final README and submission self-contained: identify the audience, show the working workflow, provide exact startup steps, and give concrete evidence against the four criteria. Match every claim to implemented behavior.
 
 Build 17:30-20:30 on 29 October 2026, Europe/Dublin. Target submission by 20:25. Weights: problem fit 30, working implementation 30, usability afterward 20, time returned 20. No mocked or faked core functionality; sample fixtures must exercise the actual implementation. Judge reads README/code or live site and form description; Kevin checks the top three.
+
+The current app also provides project status, an explicitly reviewed multi-project end-of-day queue, a recovery workspace, snapshot comparisons, a decision journal, a context map, and locally exported and reviewed teammate handoffs. See the README for limits.

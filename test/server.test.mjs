@@ -502,3 +502,118 @@ test('actual Vite string proxy forwards requests without weakening Host checks',
   assert.equal(inspected.response.status, 200, JSON.stringify(inspected.body));
   assert.ok(inspected.body.inspectionId);
 });
+
+test('local handover, selected exclusions, comparison, confidence and portable export work end to end', async t => {
+  const { root, project } = await fixture(t);
+  await writeFile(path.join(project, 'private.txt'), 'do not include');
+  const base = await start(t, { vaultRoot: path.join(root, 'vault') });
+  const inspected = await request(base, '/api/inspect', { path: project });
+  assert.equal(inspected.response.status, 200);
+  const draft = await request(base, '/api/handover/local', { inspectionId: inspected.body.inspectionId, goal: 'Finish feature', issue: 'Broken test', nextStep: 'Run test' });
+  assert.equal(draft.response.status, 200);
+  assert.match(draft.body.handover, /Run test/);
+  const saved = await request(base, '/api/vaults', { inspectionId: inspected.body.inspectionId, handover: draft.body.handover, excludedFiles: ['private.txt'] });
+  assert.equal(saved.response.status, 201, JSON.stringify(saved.body));
+  await writeFile(path.join(project, 'file.txt'), 'different now');
+  await writeFile(path.join(project, 'added.txt'), 'added now');
+  const compare = await request(base, `/api/vaults/${saved.body.id}/compare`, {});
+  assert.equal(compare.response.status, 200);
+  assert.deepEqual(compare.body.changed, ['file.txt']);
+  assert.ok(compare.body.added.includes('added.txt'));
+  assert.ok(!compare.body.added.includes('private.txt'));
+  const confidence = await request(base, `/api/vaults/${saved.body.id}/confidence`, {});
+  assert.equal(confidence.response.status, 200);
+  assert.equal(confidence.body.integrity.ok, true);
+  const destination = path.join(root, 'handoff');
+  const exported = await request(base, `/api/vaults/${saved.body.id}/export`, { destination });
+  assert.equal(exported.response.status, 200, JSON.stringify(exported.body));
+  assert.equal(await readFile(path.join(destination, 'file.txt'), 'utf8'), 'unfinished work');
+  await assert.rejects(readFile(path.join(destination, 'private.txt')), { code: 'ENOENT' });
+  assert.match(await readFile(path.join(destination, exported.body.resumeFile), 'utf8'), /Run test/);
+  const manifest = JSON.parse(await readFile(path.join(destination, exported.body.manifestFile), 'utf8'));
+  assert.ok(manifest.files.some(f => f.path === 'file.txt'));
+  assert.ok(!manifest.files.some(f => f.path === 'private.txt'));
+});
+
+test('local capture rejects exclusions outside the inspected preview and stale projects', async t => {
+  const { root, project } = await fixture(t);
+  const base = await start(t, { vaultRoot: path.join(root, 'vault') });
+  let inspected = (await request(base, '/api/inspect', { path: project })).body;
+  let draft = await request(base, '/api/handover/local', { inspectionId: inspected.inspectionId, goal: '', issue: '', nextStep: '' });
+  let saved = await request(base, '/api/vaults', { inspectionId: inspected.inspectionId, handover: draft.body.handover, excludedFiles: ['../outside'] });
+  assert.equal(saved.response.status, 400);
+  inspected = (await request(base, '/api/inspect', { path: project })).body;
+  draft = await request(base, '/api/handover/local', { inspectionId: inspected.inspectionId, goal: '', issue: '', nextStep: '' });
+  await writeFile(path.join(project, 'file.txt'), 'changed after review');
+  saved = await request(base, '/api/vaults', { inspectionId: inspected.inspectionId, handover: draft.body.handover });
+  assert.equal(saved.response.status, 409);
+});
+
+test('stopping check only probes explicitly supplied process IDs', async t => {
+  const base = await start(t);
+  const result = await request(base, '/api/task-status', { pids: [process.pid] });
+  assert.equal(result.response.status, 200);
+  assert.deepEqual(result.body.tasks, [{ pid: process.pid, status: 'exists' }]);
+  assert.match(result.body.note, /No processes were stopped/);
+  assert.equal((await request(base, '/api/task-status', { pids: [0] })).response.status, 400);
+  assert.equal((await request(base, '/api/task-status', { pids: [-1] })).response.status, 400);
+  assert.equal((await request(base, '/api/task-status', { pids: [1.5] })).response.status, 400);
+});
+
+test('project history, status, journal, context and received handoff work together', async t => {
+  const { root, project } = await fixture(t);
+  const base = await start(t, { vaultRoot: path.join(root, 'vault') });
+  const capture = async () => {
+    const inspection = (await request(base, '/api/inspect', { path: project })).body;
+    const draft = await request(base, '/api/handover/local', { inspectionId: inspection.inspectionId, goal:'Build feature', issue:'Investigate', nextStep:'Run tests' });
+    const saved = await request(base, '/api/vaults', { inspectionId: inspection.inspectionId, handover: draft.body.handover });
+    assert.equal(saved.response.status, 201, JSON.stringify(saved.body)); return saved.body;
+  };
+  const first = await capture();
+  await writeFile(path.join(project, 'file.txt'), 'new revision');
+  await writeFile(path.join(project, 'new.txt'), 'new file');
+  const second = await capture();
+  const updated = await request(base, `/api/vaults/${first.id}/project`, { kind:'status', status:'abandoned' });
+  assert.equal(updated.body.status, 'abandoned');
+  assert.equal((await request(base, `/api/vaults/${second.id}/project`, undefined, 'GET')).body.status, 'abandoned');
+  assert.equal((await request(base, `/api/vaults/${first.id}/project`, { kind:'status', status:'delete' })).response.status, 400);
+  const entry = await request(base, `/api/vaults/${first.id}/project`, { kind:'journal', hypothesis:'Test idea', approach:'Try it', evidence:'Observed failure', result:'Stopped', question:'Why?' });
+  assert.equal(entry.body.journal[0].snapshotId, first.id);
+  assert.equal((await request(base, `/api/vaults/${second.id}/project`, { kind:'link', issue:'Test failure', file:'../secret' })).response.status, 400);
+  const link = await request(base, `/api/vaults/${second.id}/project`, { kind:'link', issue:'Test failure', file:'file.txt' });
+  assert.equal(link.response.status, 200);
+  const checklist = await request(base, `/api/vaults/${second.id}/project`, { kind:'checklist', completed:['review','setup'] });
+  assert.deepEqual(checklist.body.checklists[second.id], ['review','setup']);
+  const comparison = await request(base, `/api/vaults/${first.id}/history-compare`, { otherId:second.id });
+  assert.equal(comparison.response.status, 200); assert.ok(comparison.body.changed.includes('file.txt')); assert.ok(comparison.body.added.includes('new.txt'));
+  const map = await request(base, `/api/vaults/${second.id}/context-map`, {});
+  assert.equal(map.response.status, 200); assert.equal(map.body.links[0].file, 'file.txt'); assert.ok(map.body.files.includes('file.txt'));
+  const destination = path.join(root, 'handoff-room');
+  const exported = await request(base, `/api/vaults/${second.id}/export`, { destination });
+  assert.equal(exported.response.status, 200, JSON.stringify(exported.body));
+  const reviewed = await request(base, '/api/handoff/review', { path:destination });
+  assert.equal(reviewed.response.status, 200, JSON.stringify(reviewed.body));
+  assert.equal(reviewed.body.integrity.ok, true); assert.match(reviewed.body.note, /Run tests/);
+  await writeFile(path.join(destination, 'file.txt'), 'tampered');
+  const changed = await request(base, '/api/handoff/review', { path:destination });
+  assert.equal(changed.body.integrity.ok, false); assert.match(changed.body.integrity.issues.join(' '), /Changed file/);
+});
+
+test('handoff review rejects descriptor path traversal and cross-project timeline comparisons', async t => {
+  const first = await fixture(t), second = await fixture(t);
+  const base = await start(t, { vaultRoot:path.join(first.root, 'vault') });
+  const capture = async project => {
+    const inspected = (await request(base, '/api/inspect', {path:project})).body;
+    const drafted = (await request(base, '/api/handover/local', {inspectionId:inspected.inspectionId,goal:'',issue:'',nextStep:''})).body;
+    return (await request(base, '/api/vaults', {inspectionId:inspected.inspectionId,handover:drafted.handover})).body;
+  };
+  const a = await capture(first.project), b = await capture(second.project);
+  assert.equal((await request(base, `/api/vaults/${a.id}/history-compare`, {otherId:b.id})).response.status, 400);
+  const destination=path.join(first.root, 'package');
+  const exported=await request(base, `/api/vaults/${a.id}/export`, {destination});
+  const descriptorFile=path.join(destination,exported.body.descriptorFile);
+  const descriptor=JSON.parse(await readFile(descriptorFile,'utf8'));
+  descriptor.resumeFile='../outside'; await writeFile(descriptorFile,JSON.stringify(descriptor));
+  const reviewed=await request(base, '/api/handoff/review', {path:destination});
+  assert.equal(reviewed.response.status,400);
+});

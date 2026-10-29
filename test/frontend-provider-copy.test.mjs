@@ -11,5 +11,6 @@ test('handover review copy is provider-neutral while preview names the actual pr
   assert.match(review, /Preparing the preview does not call the AI provider/);
   assert.match(review, /Context for \{preview\.provider\}/);
   assert.match(review, /agree to send it to \{preview\.provider\}/);
-  assert.match(review, /This draft is AI interpretation/);
+  assert.match(review, /AI-generated text can contain mistakes/);
+  assert.match(review, /Use notes as a local handover/);
 });
