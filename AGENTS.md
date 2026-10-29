@@ -62,4 +62,4 @@ These are team targets, not organiser rules. Reduce scope if starting late.
 
 ## Status
 
-The Unfinished Work Vault has an integrated React/Vite interface, a local Node backend and 75 passing automated tests. See `docs/backend-api.md` for the API contract, setup, verification status, and limitations. Live TensorX generation has been verified through the API; live Anthropic has not. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.
+The Unfinished Work Vault has an integrated React/Vite interface, a local Node backend and 76 passing automated tests. See `docs/backend-api.md` for the API contract, setup, verification status, and limitations. Live TensorX generation has been verified through the API; live Anthropic has not. ECC 2.2.3 is installed and enabled in the user's Claude Code and Codex environments; tooling installation is not an implemented product feature.

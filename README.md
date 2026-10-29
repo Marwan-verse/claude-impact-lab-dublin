@@ -17,7 +17,13 @@ Developers who work with AI coding agents. Agents make each task faster, so peop
 1. **Inspect:** choose a local Git project folder. The backend reads branch, HEAD, changed, staged and untracked files, and flags anything it cannot safely capture.
 2. **Write a short handover:** three optional prompts (what you were doing, what is unresolved, what you would do next). You review exactly what context will be sent to the model **before** any request. Claude then drafts a handover that keeps your notes, observed evidence and its own inference separate. You can edit the draft.
 3. **Vault it:** the working files and the handover are copied into a local vault with SHA-256 integrity hashes. The original project is not modified.
-4. **Come back later:** open the saved item, read "The short version", verify integrity, and restore the snapshot to a **new** folder.
+4. **Come back later:** open the saved item, read "The short version", verify integrity, and restore the snapshot to a **new** folder. The restored folder includes `VAULT-RESUME.md` with your notes, the handover and what was not restored, so resuming starts by reading one file.
+
+| Notes, consent and generated handover | Restore with resume note | Saved work |
+| --- | --- | --- |
+| ![Notes, exact context preview, consent and live TensorX handover](docs/screenshots/1-notes-consent-handover.png) | ![Restore result pointing to VAULT-RESUME.md](docs/screenshots/2-return-to-work.png) | ![Home screen listing saved work with its next step](docs/screenshots/3-home-saved.png) |
+
+*Screenshots from a real browser run against a live model (TensorX, `deepseek/deepseek-v4.1-flash`) on a project from `scripts/make-demo-project.sh`.*
 
 ## How it gives time back
 
@@ -30,11 +36,11 @@ Developers who work with AI coding agents. Agents make each task faster, so peop
 | Criterion | Where to look |
 | --- | --- |
 | Takes on the problem (30%) | Audience and problem above; [`docs/brief.md`](docs/brief.md) |
-| Actually works (30%) | Real Git inspection, capture, hashing, verification and restore in [`backend/vault.mjs`](backend/vault.mjs); live Claude call in [`backend/claude.mjs`](backend/claude.mjs); React UI in [`src/App.jsx`](src/App.jsx). 75 automated tests (`npm --prefix backend test`) run the real filesystem and Git code on temporary repositories, using a stubbed HTTP client for the model only. |
+| Actually works (30%) | Real Git inspection, capture, hashing, verification and restore in [`backend/vault.mjs`](backend/vault.mjs); live Claude call in [`backend/claude.mjs`](backend/claude.mjs); React UI in [`src/App.jsx`](src/App.jsx). 76 automated tests (`npm --prefix backend test`) run the real filesystem and Git code on temporary repositories, using a stubbed HTTP client for the model only. |
 | Someone would use it (20%) | Three commands to run (below); local only, with no account or database; works on any Git project. |
 | Gives time back (20%) | The section above. Consent before any model call, and an editable draft that is never auto-sent. |
 
-**Status:** the React/Vite interface and local Node backend are integrated and covered by 75 passing automated tests. **Live verification (29 October 2026):** with a real TensorX key and model `deepseek/deepseek-v4.1-flash`, both the direct API flow and the UI's endpoint sequence (inspect, preview, generate, save, verify, restore) completed against real Git projects created by `scripts/make-demo-project.sh`: restored files matched byte for byte, `.env` was excluded and the original project was unchanged. Live Anthropic access and a real-key run clicked through in the browser have not been verified. Capture, verification and restore need no API key.
+**Status:** the React/Vite interface and local Node backend are integrated and covered by 76 passing automated tests. **Live verification (29 October 2026):** with a real TensorX key and model `deepseek/deepseek-v4.1-flash`, both the direct API flow and the UI's endpoint sequence (inspect, preview, generate, save, verify, restore) completed against real Git projects created by `scripts/make-demo-project.sh`: restored files matched byte for byte, `.env` was excluded and the original project was unchanged. The same day, the complete UI flow was also run in a real browser (Chrome, via Playwright) against live TensorX; see `docs/screenshots/`. Live Anthropic access has not been verified. Capture, verification and restore need no API key.
 
 ## Run the app
 
@@ -46,7 +52,7 @@ npm run build
 npm --prefix backend test
 ```
 
-The default handover provider is Anthropic. In one terminal, set `ANTHROPIC_API_KEY` securely in the environment (never commit it) and start the backend:
+The backend uses Anthropic when `ANTHROPIC_API_KEY` is set and TensorX when only `TENSORX_API_KEY` is set (override with `HANDOVER_PROVIDER`). For Anthropic: In one terminal, set `ANTHROPIC_API_KEY` securely in the environment (never commit it) and start the backend:
 
 ```sh
 npm --prefix backend start

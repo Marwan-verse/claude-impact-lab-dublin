@@ -12,7 +12,7 @@ import { generateTensorxHandover } from './tensorx.mjs';
 // Run only on loopback; Host and Origin checks protect against browser attacks,
 // not other processes or users on the same machine.
 export function getConfig(env = process.env) {
-  const provider = env.HANDOVER_PROVIDER ?? 'anthropic';
+  const provider = env.HANDOVER_PROVIDER ?? (!env.ANTHROPIC_API_KEY && env.TENSORX_API_KEY ? 'tensorx' : 'anthropic');
   return {
     port: Number(env.PORT || 3001),
     vaultRoot: path.resolve(env.VAULT_ROOT || path.join(os.homedir(), '.unfinished-work-vault')),

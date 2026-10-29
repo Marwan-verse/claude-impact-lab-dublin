@@ -35,6 +35,9 @@ test('provider configuration isolates credentials and requires an explicit Tenso
   assert.equal(configured.apiKey, 'tensor-only');
   assert.equal(configured.model, 'tensor-model');
   assert.equal(getConfig({}).provider, 'anthropic');
+  assert.equal(getConfig({ TENSORX_API_KEY: 'k', TENSORX_MODEL: 'm' }).provider, 'tensorx');
+  assert.equal(getConfig({ TENSORX_API_KEY: 'k', ANTHROPIC_API_KEY: 'a' }).provider, 'anthropic');
+  assert.equal(getConfig({ HANDOVER_PROVIDER: 'anthropic', TENSORX_API_KEY: 'k' }).apiKey, undefined);
 });
 async function request(base, path, body, method) {
   const response = await post(base + path, body, method);

@@ -237,6 +237,17 @@ export async function verifySnapshot(vaultRoot, id) {
   }
   return { ok: issues.length === 0, issues, checkedFiles: expected.size };
 }
+function resumeNote(record) {
+  let notes = record.notes;
+  try { const n = JSON.parse(notes); if (n && typeof n === 'object') notes = [['What you were working on', n.goal], ['Unresolved', n.issue], ['Next step', n.nextStep]].filter(([, v]) => v).map(([k, v]) => `- **${k}:** ${v}`).join('\n'); } catch {}
+  const git = record.git || {};
+  return [`# Resume: ${record.projectName}`, '',
+    `Restored by The Unfinished Work Vault from a snapshot saved ${record.createdAt}.`,
+    `Original project: \`${record.projectPath}\` (branch \`${git.branch ?? 'unknown'}\`, commit \`${git.commit ?? 'unknown'}\`).`, '',
+    '## Your notes', '', notes || '_None._', '',
+    '## Handover', '', record.handover || '_None saved._', '',
+    '## Not restored', '', ...LIMITATIONS.map(l => `- ${l}`), ''].join('\n');
+}
 export async function restoreSnapshot(vaultRoot, id, destination) {
   const record = await getVault(vaultRoot, id), verified = await verifySnapshot(vaultRoot, id);
   if (!verified.ok) throw error(`Snapshot verification failed: ${verified.issues.join('; ')}`, 409);
@@ -255,6 +266,10 @@ export async function restoreSnapshot(vaultRoot, id, destination) {
       await mkdir(path.dirname(target), { recursive: true, mode: 0o700 });
       await writeFile(target, data, { flag: 'wx', mode: f.mode });
     }
-    return { destination, restoredFiles: record.manifest.files.length, limitations: LIMITATIONS, handover: record.handover };
+    const taken = new Set(record.manifest.files.map(f => f.path));
+    const resumeFile = taken.has('VAULT-RESUME.md') ? `VAULT-RESUME-${id.slice(0, 8)}.md` : 'VAULT-RESUME.md';
+    if (taken.has(resumeFile)) throw error('Cannot write resume note: file name already in snapshot', 409);
+    await writeFile(path.join(destination, resumeFile), resumeNote(record), { flag: 'wx', mode: 0o600 });
+    return { destination, restoredFiles: record.manifest.files.length, resumeFile, limitations: LIMITATIONS, handover: record.handover };
   } catch (e) { await rm(destination, { recursive: true, force: true }); throw e; }
 }

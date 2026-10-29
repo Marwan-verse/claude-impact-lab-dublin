@@ -146,6 +146,21 @@ test('snapshot verifies and restores actual working files while excluding secret
   assert.equal(await readFile(path.join(destination, 'new.txt'), 'utf8'), 'untracked content');
   for (const name of ['.env', '.git', 'node_modules', 'link']) await assert.rejects(readFile(path.join(destination, name)));
   assert.equal(await readFile(path.join(project, 'tracked.txt'), 'utf8'), 'unstaged content');
+  const resume = await readFile(path.join(destination, 'VAULT-RESUME.md'), 'utf8');
+  assert.match(resume, /## Handover\n\nnext/); assert.match(resume, /## Your notes\n\nnote/); assert.match(resume, /Git history/);
+  await assert.rejects(readFile(path.join(project, 'VAULT-RESUME.md')));
+});
+
+test('resume note never overwrites a captured file with the same name', async t => {
+  const { project, vaultRoot, root } = await fixture(t);
+  await writeFile(path.join(project, 'VAULT-RESUME.md'), 'mine');
+  const saved = await vault.createSnapshot({ projectPath: project, vaultRoot, notes: JSON.stringify({ goal: 'g', issue: '', nextStep: 'n' }), handover: 'h' });
+  const destination = path.join(root, 'restored');
+  const result = await vault.restoreSnapshot(vaultRoot, saved.id, destination);
+  assert.equal(await readFile(path.join(destination, 'VAULT-RESUME.md'), 'utf8'), 'mine');
+  assert.equal(result.resumeFile, `VAULT-RESUME-${saved.id.slice(0, 8)}.md`);
+  const resume = await readFile(path.join(destination, result.resumeFile), 'utf8');
+  assert.match(resume, /\*\*Next step:\*\* n/); assert.doesNotMatch(resume, /Unresolved/);
 });
 
 test('common dependency caches and build outputs are excluded', async t => {
