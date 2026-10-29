@@ -1,14 +1,15 @@
 # Backend API and local walkthrough
 
-The backend is a local Node HTTP API; there is **no UI yet**. It inspects a Git working tree, sends explicitly confirmed metadata and notes to Claude for a handover, snapshots permitted files locally, and verifies/restores those files. It does not stop agents or recreate a working environment. The intended benefit is less time reconstructing context when you return, not a measured time saving.
+The local Node HTTP API is integrated with the React/Vite UI. It inspects a Git working tree, sends explicitly confirmed metadata and notes to Claude for a handover, snapshots permitted files locally, and verifies/restores those files. It does not stop agents or recreate a working environment. The intended benefit is less time reconstructing context when you return, not a measured time saving.
 
 ## Requirements and configuration
 
 - Node.js 20 or newer, npm and Git. The walkthrough also uses `curl` 7.76.0 or newer (`--fail-with-body`) and `jq`, and assumes a POSIX shell.
-- No npm dependencies are currently declared. From the repository root run `npm --prefix backend test` and `npm --prefix backend start`.
+- The backend declares no npm dependencies. For the app, follow the README: run `npm ci`, `npm run build`, and `npm --prefix backend test` from the repository root; then start the backend with `npm --prefix backend start` and the frontend in a second terminal with `npm run dev`.
 - `ANTHROPIC_API_KEY` is required for creating a vault; set it in the server's environment, not a tracked file. Other API operations do not require a key. A real create makes a network request and may use paid API credits.
 - Optional: `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), `ANTHROPIC_WORKSPACE_ID` (sent as the `anthropic-workspace-id` header), `VAULT_ROOT` (default `~/.unfinished-work-vault`) and `PORT` (default `3001`; 1–65535). Relative `VAULT_ROOT` values are resolved by the server. Project, vault and destination paths must avoid symlink components; project and vault must not contain one another.
 - The server binds to `127.0.0.1` and has **no authentication**. Other local users/processes can call it. Host and browser Origin checks are not authentication; do not expose it to a network or use it on an untrusted shared machine. Allowed cross-origin browser origins are `http://localhost:5173` and `http://127.0.0.1:5173`.
+- Vite's development proxy forwards `/api` to `http://127.0.0.1:3001` regardless of `PORT`. If changing the backend port, update the proxy target as well; changing `PORT` alone only works for clients that address the backend directly.
 
 ## What is shared and stored
 
@@ -104,4 +105,4 @@ Frontend inspection and preview IDs are kept in memory, expire after 15 minutes,
 
 ## Verification status
 
-The automated tests exercise real Git and filesystem capture/restore while substituting a simulated Claude response; they do not establish that a live Claude request succeeds. The walkthrough commands were exercised against a real local server and Git project, with a simulated Claude response for create. Live Claude access and the complete real-key walkthrough have not been verified here. Model access, account permissions, network and available credits must be checked by the operator.
+The integrated UI has been exercised in a real browser against the local backend with a simulated Claude response, not a live Claude request. The automated tests exercise real Git and filesystem capture/restore while substituting a simulated Claude response; they do not establish that a live Claude request succeeds. The API walkthrough commands were exercised against a real local server and Git project, with a simulated Claude response for create. Live Claude access and the complete real-key walkthrough have not been verified here. Model access, account permissions, network and available credits must be checked by the operator.

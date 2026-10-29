@@ -1,38 +1,29 @@
-# Person 1 frontend API handoff
+# Frontend and backend API contract
 
-Person 2 owns the local service. The frontend currently proxies `/api` to `http://localhost:3001` during development. These shapes are proposed for integration and must be checked jointly against the real service before claiming end-to-end functionality.
+The React/Vite UI and the local Node service are integrated. This describes the implemented browser flow; see [backend-api.md](backend-api.md) for the complete API, setup, privacy safeguards and limitations.
 
-| Method and path | Request | Expected response |
+## Local setup
+
+From the repository root, follow the README: `npm ci`, `npm run build`, and `npm --prefix backend test`. Set `ANTHROPIC_API_KEY` securely in the backend environment, start it with `npm --prefix backend start`, and run `npm run dev` in a second terminal. A real generation calls Claude and may consume paid credits. The API binds to `127.0.0.1:3001` by default, without authentication; use a trusted machine. Vite proxies `/api` to `http://127.0.0.1:3001`; changing backend `PORT` also requires changing that proxy for the UI. `ANTHROPIC_MODEL`, `ANTHROPIC_WORKSPACE_ID`, and `VAULT_ROOT` are optional backend settings; their defaults and path constraints are documented in the backend guide.
+
+## Browser flow
+
+All POST requests below use JSON, and failures return a non-success HTTP status and `{error: "..."}`. The service checks the reviewed project context and capture preview for changes; avoid concurrent project or vault changes because these checks are not race-proof.
+
+| Step | Request | Actual response and behavior |
 | --- | --- | --- |
-| `POST /api/inspect` | `{ path }` | Inspection JSON with `inspectionId`, evidence and exclusions. |
-| `POST /api/handover/preview` | `{ inspectionId, goal, issue, nextStep }` | `{ previewId, provider, context }`, with `context` the exact serialized material to be sent. No model call. |
-| `POST /api/handover/generate` | `{ previewId }` | `{ handover }` or `{ draft }`, a generated string. Only send the reviewed preview. |
-| `POST /api/vaults` | `{ inspectionId, handover }` | `{ id, name, createdAt, handover, nextStep }` or `{ vault: {...} }`. |
-| `GET /api/vaults` | — | Array of vaults or `{ vaults: [...] }`. |
-| `GET /api/vaults/:id` | — | A vault object or `{ vault: {...} }`. |
-| `POST /api/vaults/:id/verify` | — | JSON verification results. |
-| `POST /api/vaults/:id/restore` | `{ destination }` | JSON result describing actual restoration. |
+| Inspect | `POST /api/inspect` with `{path}` | Inspection including `inspectionId`, Git facts, exclusions, `capturePreview`, and `contextPreview`. Review the files and skipped paths. |
+| Preview | `POST /api/handover/preview` with `{inspectionId, goal, issue, nextStep}` | `{previewId, provider, context}`; `context` is the exact serialized user-message material intended for Claude. No model call occurs. Notes may be empty strings. |
+| Generate | `POST /api/handover/generate` with `{previewId}` | `{handover}` after the user reviews and confirms the preview. The preview is single-use, including on failure; prepare a new one if generation fails. |
+| Review and save | `POST /api/vaults` with `{inspectionId, handover}` | 201 with the saved record including `id`; the generated draft can be edited before saving. The service captures the snapshot after generation and rejects changed inspections; saving does not call Claude again. |
+| List and open | `GET /api/vaults`; `GET /api/vaults/:id` | An array of records, then a detailed record including `manifest`, checked facts and user notes. |
+| Check | `POST /api/vaults/:id/verify` with `{}` | `{ok, issues, checkedFiles}`; `ok: false` is still HTTP 200 and indicates an integrity problem. |
+| Restore | `POST /api/vaults/:id/restore` with `{destination}` | `{destination, restoredFiles, limitations, handover}`. The absolute destination must not exist; its safe parent must already exist and the destination must be outside the source and vault. Existing empty folders are rejected too. |
 
-Use HTTP error statuses and `{ error: "..." }` for failures. The frontend displays inspection and result details as evidence; the backend must avoid including secrets and distinguish facts from inference. Saved handovers are read-only until an update endpoint is defined. Agree a persisted edit contract with Person 2 before claiming this workflow is complete.
+The browser can edit a saved handover using `PATCH /api/vaults/:id` with `{handover: string}`. Unsaved edits are guarded before leaving. If initial capture fails after generation, the draft remains visible for copying before a fresh inspection and confirmed preview. The API also supports a separate direct create flow; it is not the browser sequence above.
 
-The backend must inspect and restore real files safely, reject existing destinations, avoid path/symlink escapes, and accurately disclose exclusions. Successful manifest verification only establishes snapshot integrity, not a working restored environment.
+Inspection and preview IDs are in memory, expire after 15 minutes and do not survive a server restart. A new preview invalidates the previous draft. The UI must display the exact context and require confirmation; the service rechecks the inspected state before and after generation and before saving. Source file contents and capture hashes are not sent to Claude by default, but notes, names and paths can be sensitive. Snapshot contents remain local and may include tracked or unignored secrets; review the capture preview. Verification checks snapshot integrity, not whether the application or its environment runs. Restore does not recreate Git history or staging, dependencies, credentials, environment variables, empty directories, or running processes.
 
-## Integration gaps to resolve with Person 2
+## Evidence and outstanding verification
 
-- Agree structured inspection data for checked Git facts, included/excluded files, user notes, and exact context. The frontend displays the service's preview and requires confirmation, but a real backend must enforce that the generated request matches the reviewed payload.
-- Define capture timing and how a user can edit and persist a saved handover. The generated draft is editable before initial save; saved handovers are read-only.
-- Define verification and restore result schemas, including explicit success/failure, details, and what remains unverified. The UI reports explicit `ok`, `success`, or `verified` false values as problems; other structures still need joint agreement.
-- Bind the local service to loopback, validate browser origins, protect local paths and symlinks, and never overwrite existing restore destinations. These are backend requirements, not verified properties of this frontend.
-- Test the complete workflow against real Git projects and the real service; a temporary UI test fixture does not prove filesystem recovery or Claude integration.
-
-## Proposed next contract: preview, generate, review, save
-
-This is an integration proposal, not an implemented backend API. The frontend now uses these proposed preview, generate, and save steps; agree and verify the schema with Person 2. It separates inspection and outbound AI use so the frontend can show precisely what the service intends to send.
-
-1. `POST /api/inspect` with `{ path }` returns an inspection ID, checked facts (branch, commit, changed files, setup evidence), included paths, exclusions, and warnings. Keep factual evidence distinct from user notes.
-2. `POST /api/handover/preview` with `{ inspectionId, goal, issue, nextStep }` returns `{ previewId, provider, context }`, where `context` is the exact serialised material the service will send. It performs no model call. It must exclude credentials and source contents by default. The frontend presents that material for review.
-3. `POST /api/handover/generate` with `{ previewId }` sends only the reviewed preview and returns the generated draft. Bind the preview to an immutable inspection/version and the exact context; expire or invalidate it if inputs or source files change. Reject a missing, expired, or changed preview rather than silently changing its contents.
-4. The frontend labels the generated draft as AI interpretation and allows the user to edit it. `POST /api/vaults` accepts the inspection ID and edited handover, creates the snapshot, verifies it, and returns the saved vault. Check that source files still match the reviewed inspection; if not, reject and require a fresh inspection. The service reports any failure without a success-like response.
-5. Define an update endpoint for later handover edits. Until it exists, saved handovers remain read-only.
-
-Verification responses should state `{ ok, checkedFiles, problems }`; restoration should state `{ ok, destination, restoredFiles, warnings }`. These example fields need agreement and validation. The browser must render checked facts, user notes, and AI text in separate sections and show raw details only as an optional inspection view. A successful integrity check must not be shown as proof the application or its environment runs.
+The integrated UI has been exercised in a real browser with the local backend and a simulated Claude response. Automated tests also exercise real Git and filesystem capture, verification and restore with simulated Claude responses. Neither establishes live Claude access: a complete real-key browser flow remains unverified. Do not present simulated responses as a working live integration or as satisfying the requirement for real end-to-end functionality.

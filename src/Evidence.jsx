@@ -22,13 +22,38 @@ function Category({ title, description, value }) {
   return <section className="evidence-category"><h3>{title}</h3><p>{description}</p><Value value={value}/></section>;
 }
 
+function parseNotes(notes) {
+  if (typeof notes !== 'string') return notes;
+  try {
+    const parsed = JSON.parse(notes);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : notes;
+  } catch {
+    return notes;
+  }
+}
+
 export function InspectionEvidence({ inspection }) {
   if (!inspection || typeof inspection !== 'object' || Array.isArray(inspection)) {
     return <pre className="evidence">{typeof inspection === 'string' ? inspection : JSON.stringify(inspection, null, 2)}</pre>;
   }
-  const entries = Object.entries(inspection).filter(([, value]) => present(value));
-  if (!entries.length) return <p className="evidence-muted">The service did not report any inspection details.</p>;
-  return <div className="evidence-overview"><p className="evidence-intro">Reported by the local service. Review the available details and exclusions before continuing.</p><dl className="evidence-fields">{entries.map(([key, value]) => <div key={key}><dt>{labelFor(key)}</dt><dd><Value value={value}/></dd></div>)}</dl></div>;
+  if (!Object.keys(inspection).length) return <p className="evidence-muted">The service did not report any inspection details.</p>;
+  const context = inspection.contextPreview || {};
+  const capture = inspection.capturePreview;
+  const project = {
+    projectName: inspection.projectName ?? context.projectName,
+    projectPath: inspection.projectPath,
+    git: inspection.git ?? context.git,
+    setupEvidence: inspection.setupEvidence ?? context.setupEvidence,
+  };
+  return <div className="evidence-overview">
+    <p className="evidence-intro">Reported by the local service. Review the project, every capture and skipped path, exclusions, and limitations before continuing.</p>
+    <Category title="Project and Git" description="Project details and working-tree status." value={project}/>
+    <Category title="Limitations" description="What this capture and restore cannot preserve or guarantee." value={inspection.limitations}/>
+    <Category title="Files to capture" description="Review every path: files may contain sensitive information even when their names look safe." value={capture?.files ?? 'Not reported by the service'}/>
+    <Category title="Skipped paths" description="Paths omitted from capture; a skipped directory may represent its contents." value={capture?.skipped ?? 'Not reported by the service'}/>
+    <Category title="Exclusion names" description="Names excluded from capture by the service." value={inspection.exclusions ?? context.exclusions}/>
+    <details className="raw-evidence"><summary>View all inspection data, including hashes</summary><pre className="evidence">{JSON.stringify(inspection, null, 2)}</pre></details>
+  </div>;
 }
 
 export function HandoverEvidence({ vault }) {
@@ -37,5 +62,5 @@ export function HandoverEvidence({ vault }) {
   const interpretation = vault?.aiInterpretation ?? vault?.ai_interpretation;
   const categorized = present(facts) || present(notes) || present(interpretation);
   if (!categorized) return <><p className="evidence-intro">The service has not separated checked facts, user notes, and AI interpretation. Review the returned data carefully.</p><pre className="evidence">{JSON.stringify(vault, null, 2)}</pre></>;
-  return <div className="evidence-overview"><Category title="Checked facts" description="Facts explicitly identified as checked by the local service." value={facts}/><Category title="Your notes" description="Notes supplied by the user." value={notes}/><Category title="AI interpretation" description="A generated interpretation; review it against the evidence." value={interpretation}/><details className="raw-evidence"><summary>View all service data</summary><pre className="evidence">{JSON.stringify(vault, null, 2)}</pre></details></div>;
+  return <div className="evidence-overview"><Category title="Checked facts" description="Facts explicitly identified as checked by the local service." value={facts}/><Category title="Your notes" description="Notes supplied by the user." value={parseNotes(notes)}/><Category title="AI interpretation" description="A generated interpretation; review it against the evidence." value={interpretation}/><details className="raw-evidence"><summary>View all service data</summary><pre className="evidence">{JSON.stringify(vault, null, 2)}</pre></details></div>;
 }
