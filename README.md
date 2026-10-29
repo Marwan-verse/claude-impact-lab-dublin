@@ -15,7 +15,7 @@ Developers who work with AI coding agents. Agents make each task faster, so peop
 ## What it does (implemented, end to end)
 
 1. **Inspect:** choose a local Git project folder. The backend reads branch, HEAD, changed, staged and untracked files, and flags anything it cannot safely capture.
-2. **Write a short handover:** three optional prompts (what you were doing, what is unresolved, what you would do next). You review exactly what context will be sent to the model **before** any request. Claude then drafts a handover that keeps your notes, observed evidence and its own inference separate. You can edit the draft.
+2. **Write a short handover:** three optional prompts (what you were doing, what is unresolved, what you would do next). You review exactly what context will be sent to the model **before** any request. The selected model (Anthropic or TensorX) then drafts a handover that keeps your notes, observed evidence and its own inference separate. You can edit the draft.
 3. **Vault it:** the working files and the handover are copied into a local vault with SHA-256 integrity hashes. The original project is not modified.
 4. **Come back later:** open the saved item, read "The short version", verify integrity, and restore the snapshot to a **new** folder. The restored folder includes `VAULT-RESUME.md` with your notes, the handover and what was not restored, so resuming starts by reading one file.
 
@@ -27,8 +27,8 @@ Developers who work with AI coding agents. Agents make each task faster, so peop
 
 ## How it gives time back
 
-- **Stopping costs about a minute.** You do not need to finish, commit or remember anything first, so the evening is not spent closing loops.
-- **Restarting costs less attention.** The handover and snapshot replace the 10 to 30 minutes typically spent working out "where was I?". That figure is our estimate, not a measurement.
+- **Stopping should take about a minute** (our estimate, not timed). You do not need to finish, commit or remember anything first, so the evening is not spent closing loops.
+- **Restarting costs less attention.** The handover and snapshot are meant to replace the time spent working out "where was I?". We have not measured how long that takes.
 - **It adds no new work.** There are no notifications, streaks, check-ins or tracking. The tool does nothing until you open it, and every prompt is optional.
 
 ## Evidence for the judging criteria
