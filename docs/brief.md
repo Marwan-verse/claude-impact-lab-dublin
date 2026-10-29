@@ -29,7 +29,7 @@ Original ideas are allowed if they explain their fit. Minimise interruption cost
 - Workflow: inspect a local Git project, capture permitted files and context, create a handover, verify the snapshot, and restore to a new folder.
 - Time back: reduce end-of-day handover and next-session context recovery without recurring alerts.
 - Integrations: local Git, local storage, and selectable Anthropic (default) or TensorX handover provider. Live access to neither provider has been verified. TensorX may bill separately; do not assume Anthropic credits apply.
-- Stack: React/Vite interface and local Node backend. The event requires building with Claude Code; confirm alternative handover-model eligibility with the organiser. The organiser's Claude judge is unchanged.
+- Stack: React/Vite interface and local Node backend. The event allows any handover model (confirmed 29 October 2026); the product is built with Claude Code and the organiser's Claude judge is unchanged.
 - Exclusions: arbitrary agent pausing, cloud/database recovery, automatic transcript capture, and team sync.
 - Verification example: save a real half-built project, check its snapshot, restore into a new folder, and compare actual files.
 - Submission route: public repo only with user authorisation, or accessible live site.

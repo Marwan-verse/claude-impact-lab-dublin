@@ -81,7 +81,7 @@ Exclude `.env` files, dependencies, and build output by default; make exclusions
 | `POST /api/vaults/:id/verify` | Check snapshot integrity. |
 | `POST /api/vaults/:id/restore` | Restore to a new destination. |
 
-The local backend and frontend implement these endpoints; see `docs/backend-api.md` for the request and response fields, consent requirements, limitations, and verification status. Live TensorX generation has been verified through the API; live Anthropic has not (see `docs/backend-api.md`). TensorX may bill separately; do not assume Anthropic event credits apply. The event requires building with Claude Code; confirm alternative-model eligibility with the organiser. The organiser's Claude judge is unchanged.
+The local backend and frontend implement these endpoints; see `docs/backend-api.md` for the request and response fields, consent requirements, limitations, and verification status. Live TensorX generation has been verified through the API; live Anthropic has not (see `docs/backend-api.md`). TensorX may bill separately; do not assume Anthropic event credits apply. The event allows any handover model (confirmed 29 October 2026); the product is built with Claude Code and the organiser's Claude judge is unchanged.
 
 ## Two-person work split
 

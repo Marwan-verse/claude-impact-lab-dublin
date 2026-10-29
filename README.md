@@ -68,7 +68,7 @@ The API listens on `127.0.0.1:3001` by default and is unauthenticated; run it on
 
 ## Optional TensorX provider: hidden key entry
 
-The event says **build with Claude Code**; confirm with the organiser whether using an alternative handover model is eligible. This setting does not change the organiser's Claude judge. TensorX may bill separately; do not assume Anthropic event credits apply. Check model access and charges before use.
+The event allows any handover model (confirmed 29 October 2026); the product is built with Claude Code and the organiser's Claude judge is unchanged. TensorX may bill separately; do not assume Anthropic event credits apply. Check model access and charges before use.
 
 In your own interactive macOS bash or zsh terminal (not one controlled or observed by an assistant), from the repository root, type or paste the following command, then enter your key at the prompt. The input is not echoed or inserted into shell command history. Do not send your key to an assistant, paste it into a command, or put it in the repository. Avoid terminal recordings or debugging/tracing that could expose it.
 
