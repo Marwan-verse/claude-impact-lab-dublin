@@ -49,4 +49,6 @@ Make these product-specific when selecting the workflow:
 
 ## Delivery
 
+**Evaluator: Claude**, through the organiser's Clawd judging agent (stated model: Claude Opus 5.5). Kevin reviews the top three. Make the final README and submission self-contained: identify the audience, show the working workflow, provide exact startup steps, and give concrete evidence against the four criteria. Match every claim to implemented behavior.
+
 Build 17:30-20:30 on 29 October 2026, Europe/Dublin. Target submission by 20:25. Weights: problem fit 30, working implementation 30, usability afterward 20, time returned 20. No mocked or faked core functionality; sample fixtures must exercise the actual implementation. Judge reads README/code or live site and form description; Kevin checks the top three.
