@@ -4,6 +4,8 @@
 
 Entry for the Claude Code Impact Lab Dublin (29 October 2026), challenge: **compression burnout**.
 
+**Evaluating this entry?** [JUDGING.md](JUDGING.md) has a five-minute check, evidence for each criterion with code and test links, a recorded live run, and limitations.
+
 ## Who it is for and the problem
 
 Developers who work with AI coding agents. Agents make each task faster, so people take on more of them, and the day ends with several half-finished branches, uncommitted changes and context that lives only in their head. Stopping feels risky, so evenings get used to "just finish" or to keep the state in mind. That is the compression-burnout pattern described in the brief.
