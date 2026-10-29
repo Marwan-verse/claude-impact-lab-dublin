@@ -1,6 +1,6 @@
 # Frontend demonstration
 
-The React/Vite interface is integrated with the local Node backend for Git inspection, handover generation, snapshot verification and restore. A real browser has exercised the integrated flow with a **simulated Claude response**; live Anthropic and live TensorX access and the complete real-key workflow remain unverified. Do not present a simulated response as a live model response or as proof that the real end-to-end requirement has been met.
+The React/Vite interface is integrated with the local Node backend for Git inspection, handover generation, snapshot verification and restore. A real browser has exercised the integrated flow with a simulated model response. **Live verification (29 October 2026):** with a real TensorX key and model `deepseek/deepseek-v4.1-flash`, both the direct API flow and the UI's endpoint sequence (inspect, preview, generate, save, verify, restore) completed against real Git projects created by `scripts/make-demo-project.sh`: restored files matched byte for byte, `.env` was excluded and the original project was unchanged. Live Anthropic access and a real-key run clicked through in the browser have not been verified.
 
 ## Walkthrough
 
