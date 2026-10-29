@@ -42,18 +42,31 @@ One GitHub repo or accessible live-site link per team. Repo submissions must be 
 
 For developers who need to stop with unfinished AI-assisted work, the Vault is intended to reduce the effort of picking it up again: inspect a local Git project, capture its working files, generate a handover, then verify and restore the snapshot to a new folder. The intended time returned is time away from work and less context reconstruction, not a measured productivity claim.
 
-**Status:** the local Node backend is implemented; the planned React/Vite/TypeScript UI is not yet available. The API and filesystem workflow are covered by automated tests using a simulated Claude response; a live Claude request has not been verified. ECC 2.2.3 is installed in the user's Claude Code and Codex environments, but is not a product feature.
+**Status:** the React/Vite interface and local Node backend are integrated. The API and filesystem workflow are covered by automated tests using a simulated Claude response; a live Claude request has not been verified. ECC 2.2.3 is installed in the user's Claude Code and Codex environments, but is not a product feature.
 
-### Run the backend
+### Run the app
 
-Requires Node.js 20+, npm and Git; the walkthrough also uses curl and jq. No npm dependencies are declared. From the repository root:
+Requires Node.js 20+, npm and Git; the backend API walkthrough also uses curl and jq. From the repository root, install the frontend dependencies and check the code:
 
 ```sh
+npm ci
+npm run build
 npm --prefix backend test
-# Set ANTHROPIC_API_KEY securely in the server environment before creating a vault.
+```
+
+In one terminal, set `ANTHROPIC_API_KEY` securely in the environment (never commit it) and start the backend:
+
+```sh
 npm --prefix backend start
+```
+
+In a second terminal, from the repository root, start the frontend and open the local URL printed by Vite:
+
+```sh
+npm run dev
 ```
 
 The API listens on `127.0.0.1:3001` by default and is unauthenticated; run it only on a trusted machine. A key is required for creation, which calls Claude and may consume paid credits. Optional configuration: `ANTHROPIC_MODEL`, `ANTHROPIC_WORKSPACE_ID`, `VAULT_ROOT` and `PORT`. See the [backend API guide](docs/backend-api.md) for the defaults, a complete reproducible Git example, all endpoint schemas, and recovery commands.
 
 Before creating a vault, **review the inspection's capture and Claude-context previews and your notes, then explicitly consent**. File contents are not sent to Claude by default, but project names, Git paths, setup names and notes can be sensitive. The snapshot and handover are stored locally. Git-ignored untracked files are skipped, but tracked or unignored secrets can still be captured. Capture refuses files with both staged and unstaged changes to avoid silently losing staged work. Repositories with active configured Git clean/process filters or submodules are not supported. Integrity hashes are not signed; restoration does not restore Git history or staging, empty directories, credentials, dependencies, environment variables or running processes, and verification does not establish that an app runs.
+
