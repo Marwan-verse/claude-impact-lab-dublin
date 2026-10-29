@@ -78,3 +78,14 @@ input,textarea { background:#151d19; border-color:#536457; color:#f1eee4; }
 button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible { outline:3px solid #d7c797; outline-offset:3px; }
 @media(max-width:1000px) { .card { grid-template-columns:50px minmax(120px,1fr) minmax(120px,1fr); } .card-caption,.card p { grid-column:3; } .card-date,.card-status { grid-column:2; } .card-date { grid-row:2; } .card-status { grid-row:3; } .card-link { grid-column:3; grid-row:3; } }
 @media(max-width:640px) { .intro { display:flex; } .card { grid-template-columns:46px minmax(0,1fr); gap:8px 14px; } .card-top { grid-row:1 / span 3; } .card h3,.card-date,.card-status,.card-caption,.card p,.card-link { grid-column:2; grid-row:auto; } .card-link { margin-top:6px; } }
+
+/* Keep navigation and long project details usable with a keyboard and at narrow widths. */
+.skip-link { position:fixed; top:8px; left:8px; z-index:100; padding:12px 16px; color:#111716; background:#f3eee0; border-radius:5px; transform:translateY(-150%); }
+.skip-link:focus-visible { transform:translateY(0); outline:3px solid #d7c797; outline-offset:3px; }
+.card h3,.card p,.card-date,.card-status,.evidence-value { min-width:0; overflow-wrap:anywhere; }
+@media(max-width:480px) {
+  .empty .secondary { margin-left:0; white-space:normal; }
+  .form-actions { flex-wrap:wrap; }
+  .form-actions button { flex:1 1 auto; }
+  .notice { min-width:0; overflow-wrap:anywhere; }
+}
